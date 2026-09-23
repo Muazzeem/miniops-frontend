@@ -10,33 +10,289 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as WorkspaceRouteImport } from './routes/_workspace'
+import { Route as WorkspaceAppRouteImport } from './routes/_workspace.app'
+import { Route as WorkspaceBillingRouteImport } from './routes/_workspace.billing'
+import { Route as WorkspaceClientsRouteImport } from './routes/_workspace.clients'
+import { Route as WorkspaceExpensesRouteImport } from './routes/_workspace.expenses'
+import { Route as WorkspaceNotificationsRouteImport } from './routes/_workspace.notifications'
+import { Route as WorkspaceProfileRouteImport } from './routes/_workspace.profile'
+import { Route as WorkspaceProjectsRouteImport } from './routes/_workspace.projects'
+import { Route as WorkspaceReportsRouteImport } from './routes/_workspace.reports'
+import { Route as WorkspaceSettingsRouteImport } from './routes/_workspace.settings'
+import { Route as WorkspaceTasksRouteImport } from './routes/_workspace.tasks'
+import { Route as WorkspaceTeamRouteImport } from './routes/_workspace.team'
+import { Route as WorkspaceTimeRouteImport } from './routes/_workspace.time'
+import { Route as WorkspaceClientsClientIdRouteImport } from './routes/_workspace.clients.$clientId'
+import { Route as WorkspaceProjectsProjectIdRouteImport } from './routes/_workspace.projects.$projectId'
+import { Route as WorkspaceReportsClientsRouteImport } from './routes/_workspace.reports.clients'
+import { Route as WorkspaceReportsExpensesRouteImport } from './routes/_workspace.reports.expenses'
+import { Route as WorkspaceReportsProjectsRouteImport } from './routes/_workspace.reports.projects'
+import { Route as WorkspaceReportsRevenueRouteImport } from './routes/_workspace.reports.revenue'
+import { Route as WorkspaceReportsTeamRouteImport } from './routes/_workspace.reports.team'
+import { Route as WorkspaceTeamMemberIdRouteImport } from './routes/_workspace.team.$memberId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WorkspaceRoute = WorkspaceRouteImport.update({
+  id: '/_workspace',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkspaceAppRoute = WorkspaceAppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceBillingRoute = WorkspaceBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceClientsRoute = WorkspaceClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceExpensesRoute = WorkspaceExpensesRouteImport.update({
+  id: '/expenses',
+  path: '/expenses',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceNotificationsRoute = WorkspaceNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceProfileRoute = WorkspaceProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceProjectsRoute = WorkspaceProjectsRouteImport.update({
+  id: '/projects',
+  path: '/projects',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceReportsRoute = WorkspaceReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceSettingsRoute = WorkspaceSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceTasksRoute = WorkspaceTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceTeamRoute = WorkspaceTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceTimeRoute = WorkspaceTimeRouteImport.update({
+  id: '/time',
+  path: '/time',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceClientsClientIdRoute =
+  WorkspaceClientsClientIdRouteImport.update({
+    id: '/$clientId',
+    path: '/$clientId',
+    getParentRoute: () => WorkspaceClientsRoute,
+  } as any)
+const WorkspaceProjectsProjectIdRoute =
+  WorkspaceProjectsProjectIdRouteImport.update({
+    id: '/$projectId',
+    path: '/$projectId',
+    getParentRoute: () => WorkspaceProjectsRoute,
+  } as any)
+const WorkspaceReportsClientsRoute = WorkspaceReportsClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
+  getParentRoute: () => WorkspaceReportsRoute,
+} as any)
+const WorkspaceReportsExpensesRoute =
+  WorkspaceReportsExpensesRouteImport.update({
+    id: '/expenses',
+    path: '/expenses',
+    getParentRoute: () => WorkspaceReportsRoute,
+  } as any)
+const WorkspaceReportsProjectsRoute =
+  WorkspaceReportsProjectsRouteImport.update({
+    id: '/projects',
+    path: '/projects',
+    getParentRoute: () => WorkspaceReportsRoute,
+  } as any)
+const WorkspaceReportsRevenueRoute = WorkspaceReportsRevenueRouteImport.update({
+  id: '/revenue',
+  path: '/revenue',
+  getParentRoute: () => WorkspaceReportsRoute,
+} as any)
+const WorkspaceReportsTeamRoute = WorkspaceReportsTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => WorkspaceReportsRoute,
+} as any)
+const WorkspaceTeamMemberIdRoute = WorkspaceTeamMemberIdRouteImport.update({
+  id: '/$memberId',
+  path: '/$memberId',
+  getParentRoute: () => WorkspaceTeamRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/app': typeof WorkspaceAppRoute
+  '/billing': typeof WorkspaceBillingRoute
+  '/clients': typeof WorkspaceClientsRouteWithChildren
+  '/expenses': typeof WorkspaceExpensesRoute
+  '/notifications': typeof WorkspaceNotificationsRoute
+  '/profile': typeof WorkspaceProfileRoute
+  '/projects': typeof WorkspaceProjectsRouteWithChildren
+  '/reports': typeof WorkspaceReportsRouteWithChildren
+  '/settings': typeof WorkspaceSettingsRoute
+  '/tasks': typeof WorkspaceTasksRoute
+  '/team': typeof WorkspaceTeamRouteWithChildren
+  '/time': typeof WorkspaceTimeRoute
+  '/clients/$clientId': typeof WorkspaceClientsClientIdRoute
+  '/projects/$projectId': typeof WorkspaceProjectsProjectIdRoute
+  '/reports/clients': typeof WorkspaceReportsClientsRoute
+  '/reports/expenses': typeof WorkspaceReportsExpensesRoute
+  '/reports/projects': typeof WorkspaceReportsProjectsRoute
+  '/reports/revenue': typeof WorkspaceReportsRevenueRoute
+  '/reports/team': typeof WorkspaceReportsTeamRoute
+  '/team/$memberId': typeof WorkspaceTeamMemberIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/app': typeof WorkspaceAppRoute
+  '/billing': typeof WorkspaceBillingRoute
+  '/clients': typeof WorkspaceClientsRouteWithChildren
+  '/expenses': typeof WorkspaceExpensesRoute
+  '/notifications': typeof WorkspaceNotificationsRoute
+  '/profile': typeof WorkspaceProfileRoute
+  '/projects': typeof WorkspaceProjectsRouteWithChildren
+  '/reports': typeof WorkspaceReportsRouteWithChildren
+  '/settings': typeof WorkspaceSettingsRoute
+  '/tasks': typeof WorkspaceTasksRoute
+  '/team': typeof WorkspaceTeamRouteWithChildren
+  '/time': typeof WorkspaceTimeRoute
+  '/clients/$clientId': typeof WorkspaceClientsClientIdRoute
+  '/projects/$projectId': typeof WorkspaceProjectsProjectIdRoute
+  '/reports/clients': typeof WorkspaceReportsClientsRoute
+  '/reports/expenses': typeof WorkspaceReportsExpensesRoute
+  '/reports/projects': typeof WorkspaceReportsProjectsRoute
+  '/reports/revenue': typeof WorkspaceReportsRevenueRoute
+  '/reports/team': typeof WorkspaceReportsTeamRoute
+  '/team/$memberId': typeof WorkspaceTeamMemberIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_workspace': typeof WorkspaceRouteWithChildren
+  '/_workspace/app': typeof WorkspaceAppRoute
+  '/_workspace/billing': typeof WorkspaceBillingRoute
+  '/_workspace/clients': typeof WorkspaceClientsRouteWithChildren
+  '/_workspace/expenses': typeof WorkspaceExpensesRoute
+  '/_workspace/notifications': typeof WorkspaceNotificationsRoute
+  '/_workspace/profile': typeof WorkspaceProfileRoute
+  '/_workspace/projects': typeof WorkspaceProjectsRouteWithChildren
+  '/_workspace/reports': typeof WorkspaceReportsRouteWithChildren
+  '/_workspace/settings': typeof WorkspaceSettingsRoute
+  '/_workspace/tasks': typeof WorkspaceTasksRoute
+  '/_workspace/team': typeof WorkspaceTeamRouteWithChildren
+  '/_workspace/time': typeof WorkspaceTimeRoute
+  '/_workspace/clients/$clientId': typeof WorkspaceClientsClientIdRoute
+  '/_workspace/projects/$projectId': typeof WorkspaceProjectsProjectIdRoute
+  '/_workspace/reports/clients': typeof WorkspaceReportsClientsRoute
+  '/_workspace/reports/expenses': typeof WorkspaceReportsExpensesRoute
+  '/_workspace/reports/projects': typeof WorkspaceReportsProjectsRoute
+  '/_workspace/reports/revenue': typeof WorkspaceReportsRevenueRoute
+  '/_workspace/reports/team': typeof WorkspaceReportsTeamRoute
+  '/_workspace/team/$memberId': typeof WorkspaceTeamMemberIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/billing'
+    | '/clients'
+    | '/expenses'
+    | '/notifications'
+    | '/profile'
+    | '/projects'
+    | '/reports'
+    | '/settings'
+    | '/tasks'
+    | '/team'
+    | '/time'
+    | '/clients/$clientId'
+    | '/projects/$projectId'
+    | '/reports/clients'
+    | '/reports/expenses'
+    | '/reports/projects'
+    | '/reports/revenue'
+    | '/reports/team'
+    | '/team/$memberId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/app'
+    | '/billing'
+    | '/clients'
+    | '/expenses'
+    | '/notifications'
+    | '/profile'
+    | '/projects'
+    | '/reports'
+    | '/settings'
+    | '/tasks'
+    | '/team'
+    | '/time'
+    | '/clients/$clientId'
+    | '/projects/$projectId'
+    | '/reports/clients'
+    | '/reports/expenses'
+    | '/reports/projects'
+    | '/reports/revenue'
+    | '/reports/team'
+    | '/team/$memberId'
+  id:
+    | '__root__'
+    | '/'
+    | '/_workspace'
+    | '/_workspace/app'
+    | '/_workspace/billing'
+    | '/_workspace/clients'
+    | '/_workspace/expenses'
+    | '/_workspace/notifications'
+    | '/_workspace/profile'
+    | '/_workspace/projects'
+    | '/_workspace/reports'
+    | '/_workspace/settings'
+    | '/_workspace/tasks'
+    | '/_workspace/team'
+    | '/_workspace/time'
+    | '/_workspace/clients/$clientId'
+    | '/_workspace/projects/$projectId'
+    | '/_workspace/reports/clients'
+    | '/_workspace/reports/expenses'
+    | '/_workspace/reports/projects'
+    | '/_workspace/reports/revenue'
+    | '/_workspace/reports/team'
+    | '/_workspace/team/$memberId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  WorkspaceRoute: typeof WorkspaceRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +304,246 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_workspace': {
+      id: '/_workspace'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof WorkspaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_workspace/app': {
+      id: '/_workspace/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof WorkspaceAppRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/_workspace/billing': {
+      id: '/_workspace/billing'
+      path: '/billing'
+      fullPath: '/billing'
+      preLoaderRoute: typeof WorkspaceBillingRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/_workspace/clients': {
+      id: '/_workspace/clients'
+      path: '/clients'
+      fullPath: '/clients'
+      preLoaderRoute: typeof WorkspaceClientsRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/_workspace/expenses': {
+      id: '/_workspace/expenses'
+      path: '/expenses'
+      fullPath: '/expenses'
+      preLoaderRoute: typeof WorkspaceExpensesRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/_workspace/notifications': {
+      id: '/_workspace/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof WorkspaceNotificationsRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/_workspace/profile': {
+      id: '/_workspace/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof WorkspaceProfileRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/_workspace/projects': {
+      id: '/_workspace/projects'
+      path: '/projects'
+      fullPath: '/projects'
+      preLoaderRoute: typeof WorkspaceProjectsRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/_workspace/reports': {
+      id: '/_workspace/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof WorkspaceReportsRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/_workspace/settings': {
+      id: '/_workspace/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof WorkspaceSettingsRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/_workspace/tasks': {
+      id: '/_workspace/tasks'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof WorkspaceTasksRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/_workspace/team': {
+      id: '/_workspace/team'
+      path: '/team'
+      fullPath: '/team'
+      preLoaderRoute: typeof WorkspaceTeamRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/_workspace/time': {
+      id: '/_workspace/time'
+      path: '/time'
+      fullPath: '/time'
+      preLoaderRoute: typeof WorkspaceTimeRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/_workspace/clients/$clientId': {
+      id: '/_workspace/clients/$clientId'
+      path: '/$clientId'
+      fullPath: '/clients/$clientId'
+      preLoaderRoute: typeof WorkspaceClientsClientIdRouteImport
+      parentRoute: typeof WorkspaceClientsRoute
+    }
+    '/_workspace/projects/$projectId': {
+      id: '/_workspace/projects/$projectId'
+      path: '/$projectId'
+      fullPath: '/projects/$projectId'
+      preLoaderRoute: typeof WorkspaceProjectsProjectIdRouteImport
+      parentRoute: typeof WorkspaceProjectsRoute
+    }
+    '/_workspace/reports/clients': {
+      id: '/_workspace/reports/clients'
+      path: '/clients'
+      fullPath: '/reports/clients'
+      preLoaderRoute: typeof WorkspaceReportsClientsRouteImport
+      parentRoute: typeof WorkspaceReportsRoute
+    }
+    '/_workspace/reports/expenses': {
+      id: '/_workspace/reports/expenses'
+      path: '/expenses'
+      fullPath: '/reports/expenses'
+      preLoaderRoute: typeof WorkspaceReportsExpensesRouteImport
+      parentRoute: typeof WorkspaceReportsRoute
+    }
+    '/_workspace/reports/projects': {
+      id: '/_workspace/reports/projects'
+      path: '/projects'
+      fullPath: '/reports/projects'
+      preLoaderRoute: typeof WorkspaceReportsProjectsRouteImport
+      parentRoute: typeof WorkspaceReportsRoute
+    }
+    '/_workspace/reports/revenue': {
+      id: '/_workspace/reports/revenue'
+      path: '/revenue'
+      fullPath: '/reports/revenue'
+      preLoaderRoute: typeof WorkspaceReportsRevenueRouteImport
+      parentRoute: typeof WorkspaceReportsRoute
+    }
+    '/_workspace/reports/team': {
+      id: '/_workspace/reports/team'
+      path: '/team'
+      fullPath: '/reports/team'
+      preLoaderRoute: typeof WorkspaceReportsTeamRouteImport
+      parentRoute: typeof WorkspaceReportsRoute
+    }
+    '/_workspace/team/$memberId': {
+      id: '/_workspace/team/$memberId'
+      path: '/$memberId'
+      fullPath: '/team/$memberId'
+      preLoaderRoute: typeof WorkspaceTeamMemberIdRouteImport
+      parentRoute: typeof WorkspaceTeamRoute
+    }
   }
 }
 
+interface WorkspaceClientsRouteChildren {
+  WorkspaceClientsClientIdRoute: typeof WorkspaceClientsClientIdRoute
+}
+
+const WorkspaceClientsRouteChildren: WorkspaceClientsRouteChildren = {
+  WorkspaceClientsClientIdRoute: WorkspaceClientsClientIdRoute,
+}
+
+const WorkspaceClientsRouteWithChildren =
+  WorkspaceClientsRoute._addFileChildren(WorkspaceClientsRouteChildren)
+
+interface WorkspaceProjectsRouteChildren {
+  WorkspaceProjectsProjectIdRoute: typeof WorkspaceProjectsProjectIdRoute
+}
+
+const WorkspaceProjectsRouteChildren: WorkspaceProjectsRouteChildren = {
+  WorkspaceProjectsProjectIdRoute: WorkspaceProjectsProjectIdRoute,
+}
+
+const WorkspaceProjectsRouteWithChildren =
+  WorkspaceProjectsRoute._addFileChildren(WorkspaceProjectsRouteChildren)
+
+interface WorkspaceReportsRouteChildren {
+  WorkspaceReportsClientsRoute: typeof WorkspaceReportsClientsRoute
+  WorkspaceReportsExpensesRoute: typeof WorkspaceReportsExpensesRoute
+  WorkspaceReportsProjectsRoute: typeof WorkspaceReportsProjectsRoute
+  WorkspaceReportsRevenueRoute: typeof WorkspaceReportsRevenueRoute
+  WorkspaceReportsTeamRoute: typeof WorkspaceReportsTeamRoute
+}
+
+const WorkspaceReportsRouteChildren: WorkspaceReportsRouteChildren = {
+  WorkspaceReportsClientsRoute: WorkspaceReportsClientsRoute,
+  WorkspaceReportsExpensesRoute: WorkspaceReportsExpensesRoute,
+  WorkspaceReportsProjectsRoute: WorkspaceReportsProjectsRoute,
+  WorkspaceReportsRevenueRoute: WorkspaceReportsRevenueRoute,
+  WorkspaceReportsTeamRoute: WorkspaceReportsTeamRoute,
+}
+
+const WorkspaceReportsRouteWithChildren =
+  WorkspaceReportsRoute._addFileChildren(WorkspaceReportsRouteChildren)
+
+interface WorkspaceTeamRouteChildren {
+  WorkspaceTeamMemberIdRoute: typeof WorkspaceTeamMemberIdRoute
+}
+
+const WorkspaceTeamRouteChildren: WorkspaceTeamRouteChildren = {
+  WorkspaceTeamMemberIdRoute: WorkspaceTeamMemberIdRoute,
+}
+
+const WorkspaceTeamRouteWithChildren = WorkspaceTeamRoute._addFileChildren(
+  WorkspaceTeamRouteChildren,
+)
+
+interface WorkspaceRouteChildren {
+  WorkspaceAppRoute: typeof WorkspaceAppRoute
+  WorkspaceBillingRoute: typeof WorkspaceBillingRoute
+  WorkspaceClientsRoute: typeof WorkspaceClientsRouteWithChildren
+  WorkspaceExpensesRoute: typeof WorkspaceExpensesRoute
+  WorkspaceNotificationsRoute: typeof WorkspaceNotificationsRoute
+  WorkspaceProfileRoute: typeof WorkspaceProfileRoute
+  WorkspaceProjectsRoute: typeof WorkspaceProjectsRouteWithChildren
+  WorkspaceReportsRoute: typeof WorkspaceReportsRouteWithChildren
+  WorkspaceSettingsRoute: typeof WorkspaceSettingsRoute
+  WorkspaceTasksRoute: typeof WorkspaceTasksRoute
+  WorkspaceTeamRoute: typeof WorkspaceTeamRouteWithChildren
+  WorkspaceTimeRoute: typeof WorkspaceTimeRoute
+}
+
+const WorkspaceRouteChildren: WorkspaceRouteChildren = {
+  WorkspaceAppRoute: WorkspaceAppRoute,
+  WorkspaceBillingRoute: WorkspaceBillingRoute,
+  WorkspaceClientsRoute: WorkspaceClientsRouteWithChildren,
+  WorkspaceExpensesRoute: WorkspaceExpensesRoute,
+  WorkspaceNotificationsRoute: WorkspaceNotificationsRoute,
+  WorkspaceProfileRoute: WorkspaceProfileRoute,
+  WorkspaceProjectsRoute: WorkspaceProjectsRouteWithChildren,
+  WorkspaceReportsRoute: WorkspaceReportsRouteWithChildren,
+  WorkspaceSettingsRoute: WorkspaceSettingsRoute,
+  WorkspaceTasksRoute: WorkspaceTasksRoute,
+  WorkspaceTeamRoute: WorkspaceTeamRouteWithChildren,
+  WorkspaceTimeRoute: WorkspaceTimeRoute,
+}
+
+const WorkspaceRouteWithChildren = WorkspaceRoute._addFileChildren(
+  WorkspaceRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  WorkspaceRoute: WorkspaceRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
