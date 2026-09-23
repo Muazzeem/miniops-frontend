@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WorkspaceRouteImport } from './routes/_workspace'
+import { Route as WorkspaceActivityRouteImport } from './routes/_workspace.activity'
+import { Route as WorkspaceAdminRouteImport } from './routes/_workspace.admin'
 import { Route as WorkspaceAppRouteImport } from './routes/_workspace.app'
 import { Route as WorkspaceBillingRouteImport } from './routes/_workspace.billing'
 import { Route as WorkspaceClientsRouteImport } from './routes/_workspace.clients'
@@ -40,6 +42,16 @@ const IndexRoute = IndexRouteImport.update({
 const WorkspaceRoute = WorkspaceRouteImport.update({
   id: '/_workspace',
   getParentRoute: () => rootRouteImport,
+} as any)
+const WorkspaceActivityRoute = WorkspaceActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceAdminRoute = WorkspaceAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => WorkspaceRoute,
 } as any)
 const WorkspaceAppRoute = WorkspaceAppRouteImport.update({
   id: '/app',
@@ -148,6 +160,8 @@ const WorkspaceTeamMemberIdRoute = WorkspaceTeamMemberIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/activity': typeof WorkspaceActivityRoute
+  '/admin': typeof WorkspaceAdminRoute
   '/app': typeof WorkspaceAppRoute
   '/billing': typeof WorkspaceBillingRoute
   '/clients': typeof WorkspaceClientsRouteWithChildren
@@ -171,6 +185,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/activity': typeof WorkspaceActivityRoute
+  '/admin': typeof WorkspaceAdminRoute
   '/app': typeof WorkspaceAppRoute
   '/billing': typeof WorkspaceBillingRoute
   '/clients': typeof WorkspaceClientsRouteWithChildren
@@ -196,6 +212,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_workspace': typeof WorkspaceRouteWithChildren
+  '/_workspace/activity': typeof WorkspaceActivityRoute
+  '/_workspace/admin': typeof WorkspaceAdminRoute
   '/_workspace/app': typeof WorkspaceAppRoute
   '/_workspace/billing': typeof WorkspaceBillingRoute
   '/_workspace/clients': typeof WorkspaceClientsRouteWithChildren
@@ -221,6 +239,8 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/activity'
+    | '/admin'
     | '/app'
     | '/billing'
     | '/clients'
@@ -244,6 +264,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/activity'
+    | '/admin'
     | '/app'
     | '/billing'
     | '/clients'
@@ -268,6 +290,8 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_workspace'
+    | '/_workspace/activity'
+    | '/_workspace/admin'
     | '/_workspace/app'
     | '/_workspace/billing'
     | '/_workspace/clients'
@@ -310,6 +334,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof WorkspaceRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_workspace/activity': {
+      id: '/_workspace/activity'
+      path: '/activity'
+      fullPath: '/activity'
+      preLoaderRoute: typeof WorkspaceActivityRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/_workspace/admin': {
+      id: '/_workspace/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof WorkspaceAdminRouteImport
+      parentRoute: typeof WorkspaceRoute
     }
     '/_workspace/app': {
       id: '/_workspace/app'
@@ -508,6 +546,8 @@ const WorkspaceTeamRouteWithChildren = WorkspaceTeamRoute._addFileChildren(
 )
 
 interface WorkspaceRouteChildren {
+  WorkspaceActivityRoute: typeof WorkspaceActivityRoute
+  WorkspaceAdminRoute: typeof WorkspaceAdminRoute
   WorkspaceAppRoute: typeof WorkspaceAppRoute
   WorkspaceBillingRoute: typeof WorkspaceBillingRoute
   WorkspaceClientsRoute: typeof WorkspaceClientsRouteWithChildren
@@ -523,6 +563,8 @@ interface WorkspaceRouteChildren {
 }
 
 const WorkspaceRouteChildren: WorkspaceRouteChildren = {
+  WorkspaceActivityRoute: WorkspaceActivityRoute,
+  WorkspaceAdminRoute: WorkspaceAdminRoute,
   WorkspaceAppRoute: WorkspaceAppRoute,
   WorkspaceBillingRoute: WorkspaceBillingRoute,
   WorkspaceClientsRoute: WorkspaceClientsRouteWithChildren,

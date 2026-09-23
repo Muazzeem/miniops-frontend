@@ -4,6 +4,8 @@
 - [x] Recompose and polish the landing page and product preview
 - [x] Simplify workspace controls and permission management
 - [x] Verify priority pages across desktop, tablet, and mobile
+- [x] Add missing Activity and Admin destinations from the supplied references
+- [x] Verify new navigation, Admin tabs, invitation flow, and mobile layout
 
 - [x] Foundation, design system, mock data, and frontend state
 - [x] Responsive employer application shell and global interactions
