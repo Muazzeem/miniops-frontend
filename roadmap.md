@@ -1,14 +1,14 @@
 # MiniOps roadmap
 
-- [ ] Foundation, design system, mock data, and frontend state
-- [ ] Responsive employer application shell and global interactions
-- [ ] Executive dashboard
-- [ ] Projects and project detail
-- [ ] Clients and client detail
-- [ ] Team, invitations, member detail, and permissions
-- [ ] Tasks list, board, and calendar
-- [ ] Time and expenses
-- [ ] Reports and dedicated report views
-- [ ] Settings, billing, notifications, and profile
-- [ ] Public marketing site
-- [ ] Empty, loading, error, accessibility, and responsive verification
+- [x] Foundation, design system, mock data, and frontend state
+- [x] Responsive employer application shell and global interactions
+- [x] Executive dashboard
+- [x] Projects and project detail
+- [x] Clients and client detail
+- [x] Team, invitations, member detail, and permissions
+- [x] Tasks list, board, and calendar
+- [x] Time and expenses
+- [x] Reports and dedicated report views
+- [x] Settings, billing, notifications, and profile
+- [x] Public marketing site
+- [x] Empty, loading, error, accessibility, and responsive verification

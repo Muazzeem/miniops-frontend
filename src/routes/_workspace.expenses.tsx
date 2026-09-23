@@ -1,0 +1,2 @@
+import {createFileRoute} from '@tanstack/react-router';import {Expenses} from '@/features/pages';
+export const Route=createFileRoute('/_workspace/expenses')({head:()=>({meta:[{title:'Expenses — MiniOps'},{name:'description',content:'Track project expenses and agency overhead.'},{property:'og:title',content:'Expenses — MiniOps'},{property:'og:description',content:'Track project expenses and agency overhead.'},{property:'og:type',content:'website'},{name:'twitter:card',content:'summary_large_image'}]}),component:Expenses});

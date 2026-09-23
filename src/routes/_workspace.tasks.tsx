@@ -1,0 +1,2 @@
+import {createFileRoute} from '@tanstack/react-router';import {Tasks} from '@/features/pages';
+export const Route=createFileRoute('/_workspace/tasks')({head:()=>({meta:[{title:'Tasks — MiniOps'},{name:'description',content:'Lightweight agency task coordination.'},{property:'og:title',content:'Tasks — MiniOps'},{property:'og:description',content:'Lightweight agency task coordination.'},{property:'og:type',content:'website'},{name:'twitter:card',content:'summary_large_image'}]}),component:Tasks});

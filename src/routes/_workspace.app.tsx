@@ -1,0 +1,2 @@
+import {createFileRoute} from '@tanstack/react-router';import {Dashboard} from '@/features/dashboard';
+export const Route=createFileRoute('/_workspace/app')({head:()=>({meta:[{title:'Dashboard — MiniOps'},{name:'description',content:'Executive agency profitability dashboard.'},{property:'og:title',content:'Dashboard — MiniOps'},{property:'og:description',content:'Executive agency profitability dashboard.'},{property:'og:type',content:'website'},{name:'twitter:card',content:'summary_large_image'}]}),component:Dashboard});
