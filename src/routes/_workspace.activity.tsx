@@ -1,5 +1,5 @@
 import {createFileRoute} from '@tanstack/react-router';
-import {ActivityPage} from '@/features/pages';
+import {ActivityPage} from '@/features/admin-activity';
 
 export const Route=createFileRoute('/_workspace/activity')({
   head:()=>({meta:[
