@@ -1,8 +1,8 @@
 # MiniOps roadmap
 
-- [ ] Refine the shared visual system and remove style leakage
-- [ ] Recompose and polish the landing page and product preview
-- [ ] Simplify workspace controls and permission management
+- [x] Refine the shared visual system and remove style leakage
+- [x] Recompose and polish the landing page and product preview
+- [x] Simplify workspace controls and permission management
 - [ ] Verify priority pages across desktop, tablet, and mobile
 
 - [x] Foundation, design system, mock data, and frontend state
