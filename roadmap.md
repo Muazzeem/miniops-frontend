@@ -1,5 +1,10 @@
 # MiniOps roadmap
 
+- [ ] Refine the shared visual system and remove style leakage
+- [ ] Recompose and polish the landing page and product preview
+- [ ] Simplify workspace controls and permission management
+- [ ] Verify priority pages across desktop, tablet, and mobile
+
 - [x] Foundation, design system, mock data, and frontend state
 - [x] Responsive employer application shell and global interactions
 - [x] Executive dashboard
