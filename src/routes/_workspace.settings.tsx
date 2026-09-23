@@ -1,0 +1,2 @@
+import {createFileRoute} from '@tanstack/react-router';import {SettingsPage} from '@/features/pages';
+export const Route=createFileRoute('/_workspace/settings')({head:()=>({meta:[{title:'Settings — MiniOps'},{name:'description',content:'Configure Northstar Digital.'},{property:'og:title',content:'Settings — MiniOps'},{property:'og:description',content:'Configure Northstar Digital.'},{property:'og:type',content:'website'},{name:'twitter:card',content:'summary_large_image'}]}),component:SettingsPage});

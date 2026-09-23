@@ -1,0 +1,2 @@
+import {createFileRoute} from '@tanstack/react-router';import {TimePage} from '@/features/pages';
+export const Route=createFileRoute('/_workspace/time')({head:()=>({meta:[{title:'Time — MiniOps'},{name:'description',content:'Review billable time and delivery cost.'},{property:'og:title',content:'Time — MiniOps'},{property:'og:description',content:'Review billable time and delivery cost.'},{property:'og:type',content:'website'},{name:'twitter:card',content:'summary_large_image'}]}),component:TimePage});
