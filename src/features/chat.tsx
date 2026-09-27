@@ -15,7 +15,7 @@ import {useMiniOps} from './store';
 const EMOJI=['😀','😂','😍','👍','👏','🙏','🎉','🔥','✅','👀','💡','🚀','❤️','😅','🤔','🙌'];
 const REPLIES=['Sounds good 👍','On it.','Thanks! I will take a look.','Perfect, let’s go with that.','Give me 10 minutes.'];
 
-export function ChatPage({initial}:{initial?:string}){const {conversations,team,profile,sendMessage,deleteMessage,readConversation,createGroup}=useMiniOps();const [activeId,setActiveId]=useState<string|undefined>(initial);const [q,setQ]=useState('');const [typing,setTyping]=useState<string|null>(null);const [mobileOpen,setMobileOpen]=useState(!!initial);const [creating,setCreating]=useState(false);
+export function ChatPage({initial}:{initial?:string|undefined}){const {conversations,team,profile,sendMessage,deleteMessage,readConversation,createGroup}=useMiniOps();const [activeId,setActiveId]=useState<string|undefined>(initial);const [q,setQ]=useState('');const [typing,setTyping]=useState<string|null>(null);const [mobileOpen,setMobileOpen]=useState(!!initial);const [creating,setCreating]=useState(false);
 const nameOf=(id:string)=>id===profile.id?profile.name:String(team.find(m=>m[0]===id)?.[1]??'Teammate');
 const active=conversations.find(c=>c.id===activeId)??conversations[0];
 useEffect(()=>{if(active&&active.unread)readConversation(active.id)},[active?.id]);// eslint-disable-line react-hooks/exhaustive-deps

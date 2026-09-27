@@ -6,7 +6,7 @@ export type ChatMessage={id:string;author:string;text?:string|undefined;image?:s
 export type Conversation={id:string;kind:'direct'|'group';name:string;memberIds:string[];project?:string|undefined;unread:number;messages:ChatMessage[]};
 export type NotificationType='project'|'task'|'lead'|'message'|'team';
 export type AppNotification={id:string;type:NotificationType;title:string;description:string;ago:string;read:boolean;to:string;search?:Record<string,string>};
-export type Profile={id:string;name:string;title:string;email:string;phone:string;timezone:string;avatar?:string};
+export type Profile={id:string;name:string;title:string;email:string;phone:string;timezone:string;avatar?:string|undefined};
 
 export const ME='alex';
 export const initialProfile:Profile={id:ME,name:'Alex Morgan',title:'Founder & Project Lead',email:'alex@northstardigital.co',phone:'+1 (415) 555-0142',timezone:'Asia/Dhaka (UTC+6)'};
