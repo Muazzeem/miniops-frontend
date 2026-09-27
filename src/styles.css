@@ -104,7 +104,7 @@
 
 @utility num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 @utility toolbar { margin-bottom: 1.25rem; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; border-radius: var(--radius-lg); background: var(--card); padding: .625rem; box-shadow: var(--shadow-card); }
-@utility metric-grid { display: grid; grid-template-columns: minmax(0,1fr); gap: .875rem; @media (min-width: 640px) { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 1rem; } @media (min-width: 1280px) { grid-template-columns: repeat(4, minmax(0,1fr)); gap: 1.25rem; } }
+@utility metric-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: .75rem; @media (min-width: 640px) { gap: 1rem; } @media (min-width: 1280px) { grid-template-columns: repeat(4, minmax(0,1fr)); gap: 1.25rem; } }
 @utility insight { border-radius: var(--radius-lg); background: linear-gradient(135deg, var(--primary-soft), var(--accent)); padding: 1rem; font-size: .875rem; line-height: 1.6; }
 @utility avatar { display: grid; width: 2rem; height: 2rem; flex: none; place-items: center; border-radius: 999px; background: var(--secondary); font-size: .68rem; font-weight: 600; }
 @utility eyebrow { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: var(--primary); }
