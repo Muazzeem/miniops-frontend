@@ -1,5 +1,5 @@
 import {Link} from '@tanstack/react-router';
-import {ArrowRight,Check,ChevronRight,Clock3,Gauge,TrendingUp} from 'lucide-react';
+import {ArrowRight,Check,ChevronRight,Clock3,Gauge} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 import {Accordion,AccordionContent,AccordionItem,AccordionTrigger} from '@/components/ui/accordion';
 import {FinanceChart} from '@/components/miniops/charts';
