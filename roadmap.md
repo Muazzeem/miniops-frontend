@@ -22,8 +22,8 @@
 
 ## Workspace, leads, and subscriptions refinement
 
-- [ ] Add isolated multi-workspace mock state and workspace creation/switching
-- [ ] Add lightweight leads list, response timers, actions, notifications, and dashboard summary
-- [ ] Add subscription tracking inside Expenses with summary, add flow, and detail view
-- [ ] Refine landing preview, navigation, shared UI states, and responsive behavior
-- [ ] Audit metadata, type safety, build output, and priority viewport flows
+- [x] Add isolated multi-workspace mock state and workspace creation/switching
+- [x] Add lightweight leads list, response timers, actions, notifications, and dashboard summary
+- [x] Add subscription tracking inside Expenses with summary, add flow, and detail view
+- [x] Refine landing preview, navigation, shared UI states, and responsive behavior
+- [x] Audit metadata, type safety, build output, and priority viewport flows
