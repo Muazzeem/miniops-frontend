@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Keep all mock operational data inside the workspace-scoped MiniOps provider so switching agencies never mixes visible records or financial totals.
