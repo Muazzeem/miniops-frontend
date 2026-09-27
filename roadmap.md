@@ -19,3 +19,11 @@
 - [x] Settings, billing, notifications, and profile
 - [x] Public marketing site
 - [x] Empty, loading, error, accessibility, and responsive verification
+
+## Workspace, leads, and subscriptions refinement
+
+- [ ] Add isolated multi-workspace mock state and workspace creation/switching
+- [ ] Add lightweight leads list, response timers, actions, notifications, and dashboard summary
+- [ ] Add subscription tracking inside Expenses with summary, add flow, and detail view
+- [ ] Refine landing preview, navigation, shared UI states, and responsive behavior
+- [ ] Audit metadata, type safety, build output, and priority viewport flows
