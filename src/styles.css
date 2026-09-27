@@ -45,8 +45,8 @@
   --color-info: var(--info);
   --color-info-soft: var(--info-soft);
   --color-cost-soft: var(--cost-soft);
-  --shadow-card: 0 1px 2px oklch(.18 .03 275 / .04), 0 8px 24px -20px oklch(.18 .04 275 / .18);
-  --shadow-card-hover: 0 3px 8px oklch(.18 .03 275 / .06), 0 18px 36px -24px oklch(.18 .05 275 / .22);
+  --shadow-card: 0 0 0 1px oklch(.2 .03 275 / .035), 0 2px 10px oklch(.2 .03 265 / .04);
+  --shadow-card-hover: 0 0 0 1px oklch(.2 .03 275 / .05), 0 6px 20px oklch(.2 .04 275 / .07);
   --shadow-modal: 0 24px 64px -20px oklch(.15 .04 275 / .3);
   --shadow-preview: 0 40px 90px -35px oklch(.35 .12 285 / .3), 0 10px 28px -18px oklch(.18 .04 275 / .18);
 }
@@ -103,8 +103,9 @@
 }
 
 @utility num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-@utility toolbar { margin-bottom: 1.25rem; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); padding: .625rem; box-shadow: var(--shadow-card); }
-@utility insight { border-left: 2px solid var(--primary); background: var(--secondary); padding: 1rem; font-size: .875rem; line-height: 1.6; }
+@utility toolbar { margin-bottom: 1.25rem; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; border-radius: var(--radius-lg); background: var(--card); padding: .625rem; box-shadow: var(--shadow-card); }
+@utility metric-grid { display: grid; grid-template-columns: minmax(0,1fr); gap: .875rem; @media (min-width: 640px) { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 1rem; } @media (min-width: 1280px) { grid-template-columns: repeat(4, minmax(0,1fr)); gap: 1.25rem; } }
+@utility insight { border-radius: var(--radius-lg); background: linear-gradient(135deg, var(--primary-soft), var(--accent)); padding: 1rem; font-size: .875rem; line-height: 1.6; }
 @utility avatar { display: grid; width: 2rem; height: 2rem; flex: none; place-items: center; border-radius: 999px; background: var(--secondary); font-size: .68rem; font-weight: 600; }
 @utility eyebrow { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: var(--primary); }
 
