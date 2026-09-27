@@ -1,2 +1,2 @@
-import {createFileRoute} from '@tanstack/react-router';import {Profile} from '@/features/pages';
+import {createFileRoute} from '@tanstack/react-router';import {Profile} from '@/features/account';
 export const Route=createFileRoute('/_workspace/profile')({head:()=>({meta:[{title:'Profile — MiniOps'},{name:'description',content:'Manage your profile preferences.'},{property:'og:title',content:'Profile — MiniOps'},{property:'og:description',content:'Manage your profile preferences.'},{property:'og:type',content:'website'},{name:'twitter:card',content:'summary_large_image'}]}),component:Profile});
