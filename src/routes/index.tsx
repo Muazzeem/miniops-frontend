@@ -1,3 +1,3 @@
 import {createFileRoute} from '@tanstack/react-router';import {Landing} from '@/features/landing';
-const description='Plan work, assign tasks, chat with your team, track time and respond to leads — the simple operating workspace for small agencies.';
+const description='Plan work, assign tasks, chat with your team and track time — the simple operating workspace for small agencies.';
 export const Route=createFileRoute('/')({head:()=>({meta:[{title:'MiniOps — The Simple Operating Workspace for Agencies'},{name:'description',content:description},{property:'og:title',content:"MiniOps — Run your agency's day in one simple workspace"},{property:'og:description',content:description},{property:'og:type',content:'website'},{name:'twitter:card',content:'summary_large_image'}]}),component:Landing});
