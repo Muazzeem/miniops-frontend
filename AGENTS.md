@@ -10,3 +10,5 @@
 <!-- LOVABLE:END -->
 
 - Keep all mock operational data inside the workspace-scoped MiniOps provider so switching agencies never mixes visible records or financial totals.
+- Chat, notifications and profile live in `src/data/ops.ts` (seed/services) and the MiniOps store; chat and notifications are keyed per workspace — keeps UI backend-ready and workspaces isolated.
+- /billing, /notifications and /reports* redirect (Billing → Settings, others → /app); header bell/avatar replace sidebar entries — product is operations-first.

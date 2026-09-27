@@ -1,2 +1,2 @@
-import {createFileRoute} from '@tanstack/react-router';import {ReportPage} from '@/features/pages';
-export const Route=createFileRoute('/_workspace/reports/projects')({head:()=>({meta:[{title:'Project Profitability Report — MiniOps'},{name:'description',content:'Project Profitability analysis for Northstar Digital.'},{property:'og:title',content:'Project Profitability Report — MiniOps'},{property:'og:description',content:'Project Profitability analysis for Northstar Digital.'},{property:'og:type',content:'website'},{name:'twitter:card',content:'summary_large_image'}]}),component:()=> <ReportPage type="projects"/>});
+import {createFileRoute,redirect} from '@tanstack/react-router';
+export const Route=createFileRoute('/_workspace/reports/projects')({beforeLoad:()=>{throw redirect({to:'/app'})}});
