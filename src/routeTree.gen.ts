@@ -18,7 +18,6 @@ import { Route as WorkspaceBillingRouteImport } from './routes/_workspace.billin
 import { Route as WorkspaceChatRouteImport } from './routes/_workspace.chat'
 import { Route as WorkspaceClientsRouteImport } from './routes/_workspace.clients'
 import { Route as WorkspaceExpensesRouteImport } from './routes/_workspace.expenses'
-import { Route as WorkspaceLeadsRouteImport } from './routes/_workspace.leads'
 import { Route as WorkspaceNotificationsRouteImport } from './routes/_workspace.notifications'
 import { Route as WorkspaceProfileRouteImport } from './routes/_workspace.profile'
 import { Route as WorkspaceProjectsRouteImport } from './routes/_workspace.projects'
@@ -78,11 +77,6 @@ const WorkspaceClientsRoute = WorkspaceClientsRouteImport.update({
 const WorkspaceExpensesRoute = WorkspaceExpensesRouteImport.update({
   id: '/expenses',
   path: '/expenses',
-  getParentRoute: () => WorkspaceRoute,
-} as any)
-const WorkspaceLeadsRoute = WorkspaceLeadsRouteImport.update({
-  id: '/leads',
-  path: '/leads',
   getParentRoute: () => WorkspaceRoute,
 } as any)
 const WorkspaceNotificationsRoute = WorkspaceNotificationsRouteImport.update({
@@ -179,7 +173,6 @@ export interface FileRoutesByFullPath {
   '/chat': typeof WorkspaceChatRoute
   '/clients': typeof WorkspaceClientsRouteWithChildren
   '/expenses': typeof WorkspaceExpensesRoute
-  '/leads': typeof WorkspaceLeadsRoute
   '/notifications': typeof WorkspaceNotificationsRoute
   '/profile': typeof WorkspaceProfileRoute
   '/projects': typeof WorkspaceProjectsRouteWithChildren
@@ -206,7 +199,6 @@ export interface FileRoutesByTo {
   '/chat': typeof WorkspaceChatRoute
   '/clients': typeof WorkspaceClientsRouteWithChildren
   '/expenses': typeof WorkspaceExpensesRoute
-  '/leads': typeof WorkspaceLeadsRoute
   '/notifications': typeof WorkspaceNotificationsRoute
   '/profile': typeof WorkspaceProfileRoute
   '/projects': typeof WorkspaceProjectsRouteWithChildren
@@ -235,7 +227,6 @@ export interface FileRoutesById {
   '/_workspace/chat': typeof WorkspaceChatRoute
   '/_workspace/clients': typeof WorkspaceClientsRouteWithChildren
   '/_workspace/expenses': typeof WorkspaceExpensesRoute
-  '/_workspace/leads': typeof WorkspaceLeadsRoute
   '/_workspace/notifications': typeof WorkspaceNotificationsRoute
   '/_workspace/profile': typeof WorkspaceProfileRoute
   '/_workspace/projects': typeof WorkspaceProjectsRouteWithChildren
@@ -264,7 +255,6 @@ export interface FileRouteTypes {
     | '/chat'
     | '/clients'
     | '/expenses'
-    | '/leads'
     | '/notifications'
     | '/profile'
     | '/projects'
@@ -291,7 +281,6 @@ export interface FileRouteTypes {
     | '/chat'
     | '/clients'
     | '/expenses'
-    | '/leads'
     | '/notifications'
     | '/profile'
     | '/projects'
@@ -319,7 +308,6 @@ export interface FileRouteTypes {
     | '/_workspace/chat'
     | '/_workspace/clients'
     | '/_workspace/expenses'
-    | '/_workspace/leads'
     | '/_workspace/notifications'
     | '/_workspace/profile'
     | '/_workspace/projects'
@@ -406,13 +394,6 @@ declare module '@tanstack/react-router' {
       path: '/expenses'
       fullPath: '/expenses'
       preLoaderRoute: typeof WorkspaceExpensesRouteImport
-      parentRoute: typeof WorkspaceRoute
-    }
-    '/_workspace/leads': {
-      id: '/_workspace/leads'
-      path: '/leads'
-      fullPath: '/leads'
-      preLoaderRoute: typeof WorkspaceLeadsRouteImport
       parentRoute: typeof WorkspaceRoute
     }
     '/_workspace/notifications': {
@@ -591,7 +572,6 @@ interface WorkspaceRouteChildren {
   WorkspaceChatRoute: typeof WorkspaceChatRoute
   WorkspaceClientsRoute: typeof WorkspaceClientsRouteWithChildren
   WorkspaceExpensesRoute: typeof WorkspaceExpensesRoute
-  WorkspaceLeadsRoute: typeof WorkspaceLeadsRoute
   WorkspaceNotificationsRoute: typeof WorkspaceNotificationsRoute
   WorkspaceProfileRoute: typeof WorkspaceProfileRoute
   WorkspaceProjectsRoute: typeof WorkspaceProjectsRouteWithChildren
@@ -610,7 +590,6 @@ const WorkspaceRouteChildren: WorkspaceRouteChildren = {
   WorkspaceChatRoute: WorkspaceChatRoute,
   WorkspaceClientsRoute: WorkspaceClientsRouteWithChildren,
   WorkspaceExpensesRoute: WorkspaceExpensesRoute,
-  WorkspaceLeadsRoute: WorkspaceLeadsRoute,
   WorkspaceNotificationsRoute: WorkspaceNotificationsRoute,
   WorkspaceProfileRoute: WorkspaceProfileRoute,
   WorkspaceProjectsRoute: WorkspaceProjectsRouteWithChildren,
