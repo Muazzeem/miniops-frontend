@@ -60,7 +60,7 @@ export function DateInput({id,name,value,defaultValue,onChange,placeholder='MM/D
       </div>
       <PopoverContent align="end" sideOffset={6} collisionPadding={8} onCloseAutoFocus={e=>{e.preventDefault();inputRef.current?.focus()}} className={cn(popover,'w-auto max-w-[calc(100vw-16px)] p-0')}>
         <Calendar mode="single" selected={selected} defaultMonth={selected??today} captionLayout="dropdown" startMonth={new Date(today.getFullYear()-5,0)} endMonth={new Date(today.getFullYear()+5,11)} disabled={disabled}
-          onSelect={d=>{if(d){commit(toIso(d));setOpen(false)}}} className="pointer-events-auto p-3 [--cell-size:2.6rem] sm:[--cell-size:2.2rem]" autoFocus/>
+          onSelect={d=>{if(d){commit(toIso(d));setOpen(false)}}} className="pointer-events-auto bg-card p-3 [--cell-size:2.6rem] sm:[--cell-size:2.2rem]" autoFocus/>
         {quick&&<div className="flex gap-1.5 border-t border-border/60 p-2">
           {([['Yesterday',-1],['Today',0],['Tomorrow',1]] as const).map(([l,n])=><button key={l} type="button" onClick={()=>{commit(toIso(addDays(today,n)));setOpen(false)}} className="flex-1 rounded-lg px-2 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-primary-soft hover:text-primary focus-visible:bg-primary-soft focus-visible:text-primary sm:py-1.5">{l}</button>)}
         </div>}
@@ -139,7 +139,7 @@ export function DateRangePicker({value,onChange,className}:{value:IsoRange;onCha
           <button type="button" onClick={()=>apply(undefined)} className="shrink-0 whitespace-nowrap rounded-lg px-3 py-2 text-left text-xs font-medium text-muted-foreground transition-colors hover:bg-primary-soft hover:text-primary sm:py-1.5">All dates</button>
         </div>
         <div>
-          <Calendar mode="range" selected={draft} onSelect={setDraft} defaultMonth={draft?.from??today} captionLayout="dropdown" startMonth={new Date(today.getFullYear()-5,0)} endMonth={new Date(today.getFullYear()+5,11)} className="pointer-events-auto p-3 [--cell-size:2.6rem] sm:[--cell-size:2.2rem]" autoFocus/>
+          <Calendar mode="range" selected={draft} onSelect={setDraft} defaultMonth={draft?.from??today} captionLayout="dropdown" startMonth={new Date(today.getFullYear()-5,0)} endMonth={new Date(today.getFullYear()+5,11)} className="pointer-events-auto bg-card p-3 [--cell-size:2.6rem] sm:[--cell-size:2.2rem]" autoFocus/>
           <div className="flex items-center justify-between gap-2 border-t border-border/60 p-2 pl-3">
             <span className="min-w-0 truncate text-xs text-muted-foreground tabular-nums">{draft?.from?rangeLabel({from:toIso(draft.from),to:draft.to?toIso(draft.to):''}):'Pick a start date'}</span>
             <button type="button" disabled={!draft?.from} onClick={()=>apply(draft)} className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-opacity disabled:opacity-40">Apply</button>
