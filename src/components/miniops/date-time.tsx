@@ -24,9 +24,9 @@ const iconBtn='mr-1 grid size-9 shrink-0 place-items-center rounded-lg text-mute
 const clearBtn='grid size-8 shrink-0 place-items-center rounded-lg text-muted-foreground transition-[opacity,color] duration-150 hover:text-foreground sm:size-7 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100';
 const popover='rounded-2xl border-border/60 shadow-modal data-[state=open]:duration-200';
 
-function FieldError({id,error,hint}:{id:string;error?:string;hint?:string}){if(error)return <p id={`${id}-err`} role="alert" className="mt-1.5 flex items-center gap-1 text-xs font-medium text-destructive">{error}</p>;if(hint)return <p id={`${id}-hint`} className="mt-1.5 text-xs text-muted-foreground">{hint}</p>;return null}
+function FieldError({id,error,hint}:{id:string;error?:string|undefined;hint?:string|undefined}){if(error)return <p id={`${id}-err`} role="alert" className="mt-1.5 flex items-center gap-1 text-xs font-medium text-destructive">{error}</p>;if(hint)return <p id={`${id}-hint`} className="mt-1.5 text-xs text-muted-foreground">{hint}</p>;return null}
 
-type DateProps={id?:string;name?:string;value?:string;defaultValue?:string;onChange?:(v:string)=>void;placeholder?:string;required?:boolean;quick?:boolean;min?:string;max?:string;hint?:string;className?:string;'aria-label'?:string};
+type DateProps={id?:string;name?:string;value?:string;defaultValue?:string;onChange?:((v:string)=>void)|undefined;placeholder?:string;required?:boolean;quick?:boolean;min?:string|undefined;max?:string|undefined;hint?:string|undefined;className?:string;'aria-label'?:string};
 
 export function DateInput({id,name,value,defaultValue,onChange,placeholder='MM/DD/YYYY',required,quick=true,min,max,hint,className,...rest}:DateProps){
   const auto=useId();const inputId=id??auto;
@@ -74,7 +74,7 @@ export function parseTime(text:string):string|null{const t=text.trim().toLowerCa
 export function formatTime(v?:string){if(!v)return'';const [h,m]=v.split(':').map(Number);if(h===undefined||m===undefined||Number.isNaN(h))return'';const ap=h>=12?'PM':'AM';const hh=h%12||12;return `${hh}:${String(m).padStart(2,'0')} ${ap}`}
 const addMinutes=(v:string,d:number)=>{const [h=0,m=0]=v.split(':').map(Number);const t=((h*60+m+d)%1440+1440)%1440;return `${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`};
 
-type TimeProps={id?:string;name?:string;value?:string;defaultValue?:string;onChange?:(v:string)=>void;placeholder?:string;required?:boolean;step?:number;hint?:string;className?:string};
+type TimeProps={id?:string;name?:string;value?:string;defaultValue?:string;onChange?:(v:string)=>void;placeholder?:string;required?:boolean;step?:number;hint?:string|undefined;className?:string};
 export function TimeInput({id,name,value,defaultValue,onChange,placeholder='e.g. 10:30 AM',required,step=15,hint,className}:TimeProps){
   const auto=useId();const inputId=id??auto;
   const [inner,setInner]=useState(defaultValue??'');const v=value??inner;
@@ -85,7 +85,7 @@ export function TimeInput({id,name,value,defaultValue,onChange,placeholder='e.g.
   const fromText=(t:string)=>{if(!t.trim()){commit('');return}const p=parseTime(t);if(p)commit(p);else setError('Enter a valid time, e.g. 10:30 AM.')};
   const slots=Array.from({length:(24*60)/step},(_,i)=>addMinutes('00:00',i*step));
   const options=()=>Array.from(listRef.current?.querySelectorAll<HTMLButtonElement>('[role=option]')??[]);
-  const focusInitial=()=>{const nearest=v?slots.reduce((a,s)=>Math.abs(toMin(s)-toMin(v))<Math.abs(toMin(a)-toMin(v))?s:a,slots[0]!):'09:00';const el=options().find(o=>o.dataset.value===nearest);el?.focus();el?.scrollIntoView({block:'center'})};
+  const focusInitial=()=>{const nearest=v?slots.reduce((a,s)=>Math.abs(toMin(s)-toMin(v))<Math.abs(toMin(a)-toMin(v))?s:a,slots[0]!):'09:00';const el=options().find(o=>o.dataset['value']===nearest);el?.focus();el?.scrollIntoView({block:'center'})};
   const onListKey=(e:KeyboardEvent<HTMLDivElement>)=>{const list=options();const i=list.indexOf(document.activeElement as HTMLButtonElement);const go=(n:number)=>{e.preventDefault();const el=list[Math.max(0,Math.min(list.length-1,n))];el?.focus();el?.scrollIntoView({block:'nearest'})};
     if(e.key==='ArrowDown')go(i+1);else if(e.key==='ArrowUp')go(i-1);else if(e.key==='PageDown')go(i+4);else if(e.key==='PageUp')go(i-4);else if(e.key==='Home')go(0);else if(e.key==='End')go(list.length-1)};
   const onKey=(e:KeyboardEvent<HTMLInputElement>)=>{
