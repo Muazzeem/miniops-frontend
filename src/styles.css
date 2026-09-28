@@ -122,6 +122,6 @@
 @media (max-width: 767px) {
   .marketing-section { padding-block: 4.5rem; }
   .marketing-heading { font-size: 2.25rem; }
-  table { min-width: 720px; }
+  table:not(.rdp-month_grid) { min-width: 720px; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }
