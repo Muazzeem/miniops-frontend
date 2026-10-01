@@ -1,0 +1,2 @@
+import { createFileRoute } from "@tanstack/react-router"; import { ProfilePage } from "@/features/employee/secondary-pages";
+export const Route=createFileRoute("/employee/profile")({head:()=>({meta:[{title:"Profile — MiniOps"},{name:"description",content:"Manage your MiniOps employee profile."},{property:"og:title",content:"Employee Profile — MiniOps"},{property:"og:description",content:"Your personal MiniOps profile information."},{property:"og:type",content:"website"},{name:"twitter:card",content:"summary_large_image"}]}),component:ProfilePage});

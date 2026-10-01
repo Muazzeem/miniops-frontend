@@ -1,0 +1,2 @@
+import { createFileRoute } from "@tanstack/react-router"; import { TasksPage } from "@/features/employee/pages";
+export const Route=createFileRoute("/employee/tasks")({head:()=>({meta:[{title:"My Tasks — MiniOps"},{name:"description",content:"Everything you need to get done."},{property:"og:title",content:"My Tasks — MiniOps"},{property:"og:description",content:"Manage your tasks in list, board, and calendar views."},{property:"og:type",content:"website"},{name:"twitter:card",content:"summary_large_image"}]}),component:TasksPage});

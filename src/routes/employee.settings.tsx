@@ -1,0 +1,2 @@
+import { createFileRoute } from "@tanstack/react-router"; import { SettingsPage } from "@/features/employee/collab-pages";
+export const Route=createFileRoute("/employee/settings")({head:()=>({meta:[{title:"Settings — MiniOps"},{name:"description",content:"Your personal MiniOps preferences."},{property:"og:title",content:"Settings — MiniOps"},{property:"og:description",content:"Your personal MiniOps preferences."},{property:"og:type",content:"website"},{name:"twitter:card",content:"summary_large_image"}]}),component:SettingsPage});

@@ -1,0 +1,2 @@
+import { createFileRoute } from "@tanstack/react-router"; import { TeamPage } from "@/features/employee/collab-pages";
+export const Route=createFileRoute("/employee/team")({head:()=>({meta:[{title:"Team — MiniOps"},{name:"description",content:"The people you work with."},{property:"og:title",content:"Team — MiniOps"},{property:"og:description",content:"The people you work with."},{property:"og:type",content:"website"},{name:"twitter:card",content:"summary_large_image"}]}),component:TeamPage});

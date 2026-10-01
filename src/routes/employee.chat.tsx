@@ -1,0 +1,2 @@
+import { createFileRoute } from "@tanstack/react-router"; import { ChatPage } from "@/features/employee/collab-pages";
+export const Route=createFileRoute("/employee/chat")({head:()=>({meta:[{title:"Chat — MiniOps"},{name:"description",content:"Message your teammates."},{property:"og:title",content:"Chat — MiniOps"},{property:"og:description",content:"Message your teammates."},{property:"og:type",content:"website"},{name:"twitter:card",content:"summary_large_image"}]}),component:ChatPage});

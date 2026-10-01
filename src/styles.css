@@ -45,6 +45,21 @@
   --color-info: var(--info);
   --color-info-soft: var(--info-soft);
   --color-cost-soft: var(--cost-soft);
+  --color-primary-dark: var(--primary-dark);
+  --color-primary-light: var(--primary-light);
+  --color-ring-offset-background: var(--background);
+  /* Employee view tokens, mapped onto the shared palette */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-muted: var(--success-muted);
+  --color-warning-muted: var(--warning-muted);
+  --color-danger: var(--danger);
+  --color-danger-muted: var(--danger-muted);
+  --color-info-muted: var(--info-muted);
+  --color-avatar: var(--avatar);
+  --color-avatar-foreground: var(--avatar-foreground);
+  --color-app: var(--app);
+  --color-chart-2: var(--chart-2);
   --shadow-card: 0 0 0 1px oklch(.2 .03 275 / .035), 0 2px 10px oklch(.2 .03 265 / .04);
   --shadow-card-hover: 0 0 0 1px oklch(.2 .03 275 / .05), 0 6px 20px oklch(.2 .04 275 / .07);
   --shadow-modal: 0 24px 64px -20px oklch(.15 .04 275 / .3);
@@ -90,6 +105,19 @@
   --chart-cost: oklch(.50 .09 251);
   --chart-profit: oklch(.55 .17 145);
   --chart-warning: oklch(.68 .16 72);
+  --primary-light: oklch(.94 .04 281);
+  --success: var(--positive);
+  --success-foreground: oklch(.99 0 0);
+  --success-muted: var(--positive-soft);
+  --warning-muted: var(--warning-soft);
+  --danger: var(--destructive);
+  --danger-muted: var(--danger-soft);
+  --info-muted: var(--primary-soft);
+  --avatar: var(--sidebar-accent);
+  --avatar-foreground: var(--primary-dark);
+  --app: var(--background);
+  --chart-2: var(--info);
+  --shadow-soft: 0 0 0 1px oklch(.2 .03 275 / .035), 0 2px 10px oklch(.2 .03 265 / .04);
 }
 
 @layer base {
@@ -101,6 +129,13 @@
   button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid color-mix(in oklab, var(--ring) 55%, transparent); outline-offset: 2px; }
   ::selection { background: var(--primary-soft); color: var(--foreground); }
 }
+
+/* Employee view utilities */
+@utility surface { background-color: var(--card); border-radius: 1rem; box-shadow: var(--shadow-soft); }
+@utility gradient-soft { background-image: linear-gradient(135deg, var(--primary-soft) 0%, var(--primary-light) 100%); }
+@utility field-label { font-size: .6875rem; line-height: 1rem; font-weight: 600; text-transform: uppercase; color: var(--muted-foreground); }
+@utility mobile-list { display: none; }
+@media (max-width: 767px) { .desktop-table { display: none; } .mobile-list { display: block; } }
 
 @utility num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 @utility toolbar { margin-bottom: 1.25rem; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; border-radius: var(--radius-lg); background: var(--card); padding: .625rem; box-shadow: var(--shadow-card); }

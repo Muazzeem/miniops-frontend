@@ -1,0 +1,2 @@
+import { createFileRoute } from "@tanstack/react-router"; import { HomePage } from "@/features/employee/pages";
+export const Route=createFileRoute("/employee/")({head:()=>({meta:[{title:"Overview — MiniOps"},{name:"description",content:"Your focused daily workspace in MiniOps."},{property:"og:title",content:"Overview — MiniOps"},{property:"og:description",content:"See today’s work, projects, tasks, and time."},{property:"og:type",content:"website"},{name:"twitter:card",content:"summary_large_image"}]}),component:HomePage});

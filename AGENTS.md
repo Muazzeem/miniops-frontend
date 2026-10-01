@@ -13,3 +13,5 @@
 - Chat, notifications and profile live in `src/data/ops.ts` (seed/services) and the MiniOps store; chat and notifications are keyed per workspace — keeps UI backend-ready and workspaces isolated.
 - /billing, /notifications and /reports* redirect (Billing → Settings, others → /app); header bell/avatar replace sidebar entries — product is operations-first.
 - All date/time fields use DateInput/TimeInput from src/components/miniops/date-time.tsx (ISO values, 'Sep 29, 2026' display) — one consistent picker + typing behavior.
+- One app, two parts: employer (agency owner) at `/app` and the `_workspace.*` routes using `src/features/*` + `MiniOpsProvider`; employee at `/employee/*` and `/invite/$token` using `src/features/employee/*` + `EmployeeProvider` (`src/data/employee.ts`). Both providers wrap the root; keep employee code inside its folder and never expose employer financials in the employee part.
+- Shared UI (`src/components/ui`) and design tokens (`src/styles.css`) serve both parts; employee-only tokens (success/danger/avatar/app…) map onto the shared palette. Profile menus link the two views ("Switch to Employee/Employer View").

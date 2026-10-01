@@ -1,0 +1,2 @@
+import { createFileRoute } from "@tanstack/react-router"; import { ProjectsPage } from "@/features/employee/pages";
+export const Route=createFileRoute("/employee/projects/")({head:()=>({meta:[{title:"My Projects — MiniOps"},{name:"description",content:"Projects currently assigned to you."},{property:"og:title",content:"My Projects — MiniOps"},{property:"og:description",content:"Your assigned projects and operational progress."},{property:"og:type",content:"website"},{name:"twitter:card",content:"summary_large_image"}]}),component:ProjectsPage});
