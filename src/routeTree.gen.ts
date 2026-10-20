@@ -12,24 +12,26 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WorkspaceRouteImport } from './routes/_workspace'
 import { Route as EmployeeRouteImport } from './routes/employee'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as RegisterRouteImport } from './routes/register'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as WorkspaceActivityRouteImport } from './routes/_workspace.activity'
 import { Route as WorkspaceAdminRouteImport } from './routes/_workspace.admin'
 import { Route as WorkspaceAppRouteImport } from './routes/_workspace.app'
 import { Route as WorkspaceBillingRouteImport } from './routes/_workspace.billing'
 import { Route as WorkspaceChatRouteImport } from './routes/_workspace.chat'
-import { Route as WorkspaceClientsRouteImport } from './routes/_workspace.clients'
 import { Route as WorkspaceExpensesRouteImport } from './routes/_workspace.expenses'
 import { Route as WorkspaceNotificationsRouteImport } from './routes/_workspace.notifications'
 import { Route as WorkspaceProfileRouteImport } from './routes/_workspace.profile'
-import { Route as WorkspaceProjectsRouteImport } from './routes/_workspace.projects'
 import { Route as WorkspaceReportsRouteImport } from './routes/_workspace.reports'
 import { Route as WorkspaceSettingsRouteImport } from './routes/_workspace.settings'
-import { Route as WorkspaceTasksRouteImport } from './routes/_workspace.tasks'
-import { Route as WorkspaceTeamRouteImport } from './routes/_workspace.team'
 import { Route as WorkspaceTimeRouteImport } from './routes/_workspace.time'
 import { Route as EmployeeIndexRouteImport } from './routes/employee.index'
 import { Route as EmployeeActivityRouteImport } from './routes/employee.activity'
 import { Route as EmployeeChatRouteImport } from './routes/employee.chat'
+import { Route as EmployeeNotificationsRouteImport } from './routes/employee.notifications'
 import { Route as EmployeeProfileRouteImport } from './routes/employee.profile'
 import { Route as EmployeeProjectsRouteImport } from './routes/employee.projects'
 import { Route as EmployeeSettingsRouteImport } from './routes/employee.settings'
@@ -37,14 +39,19 @@ import { Route as EmployeeTasksRouteImport } from './routes/employee.tasks'
 import { Route as EmployeeTeamRouteImport } from './routes/employee.team'
 import { Route as EmployeeTimeRouteImport } from './routes/employee.time'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
-import { Route as WorkspaceClientsClientIdRouteImport } from './routes/_workspace.clients.$clientId'
-import { Route as WorkspaceProjectsProjectIdRouteImport } from './routes/_workspace.projects.$projectId'
+import { Route as WorkspaceClientsIndexRouteImport } from './routes/_workspace.clients.index'
+import { Route as WorkspaceClientsClientSlugRouteImport } from './routes/_workspace.clients.$clientSlug'
+import { Route as WorkspaceProjectsIndexRouteImport } from './routes/_workspace.projects.index'
+import { Route as WorkspaceProjectsProjectSlugRouteImport } from './routes/_workspace.projects.$projectSlug'
 import { Route as WorkspaceReportsClientsRouteImport } from './routes/_workspace.reports.clients'
 import { Route as WorkspaceReportsExpensesRouteImport } from './routes/_workspace.reports.expenses'
 import { Route as WorkspaceReportsProjectsRouteImport } from './routes/_workspace.reports.projects'
 import { Route as WorkspaceReportsRevenueRouteImport } from './routes/_workspace.reports.revenue'
 import { Route as WorkspaceReportsTeamRouteImport } from './routes/_workspace.reports.team'
-import { Route as WorkspaceTeamMemberIdRouteImport } from './routes/_workspace.team.$memberId'
+import { Route as WorkspaceTasksIndexRouteImport } from './routes/_workspace.tasks.index'
+import { Route as WorkspaceTasksTaskSlugRouteImport } from './routes/_workspace.tasks.$taskSlug'
+import { Route as WorkspaceTeamIndexRouteImport } from './routes/_workspace.team.index'
+import { Route as WorkspaceTeamMemberSlugRouteImport } from './routes/_workspace.team.$memberSlug'
 import { Route as EmployeeProjectsIndexRouteImport } from './routes/employee.projects.index'
 import { Route as EmployeeProjectsIdRouteImport } from './routes/employee.projects.$id'
 
@@ -60,6 +67,31 @@ const WorkspaceRoute = WorkspaceRouteImport.update({
 const EmployeeRoute = EmployeeRouteImport.update({
   id: '/employee',
   path: '/employee',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerifyEmailRoute = VerifyEmailRouteImport.update({
+  id: '/verify-email',
+  path: '/verify-email',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WorkspaceActivityRoute = WorkspaceActivityRouteImport.update({
@@ -87,11 +119,6 @@ const WorkspaceChatRoute = WorkspaceChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => WorkspaceRoute,
 } as any)
-const WorkspaceClientsRoute = WorkspaceClientsRouteImport.update({
-  id: '/clients',
-  path: '/clients',
-  getParentRoute: () => WorkspaceRoute,
-} as any)
 const WorkspaceExpensesRoute = WorkspaceExpensesRouteImport.update({
   id: '/expenses',
   path: '/expenses',
@@ -107,11 +134,6 @@ const WorkspaceProfileRoute = WorkspaceProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => WorkspaceRoute,
 } as any)
-const WorkspaceProjectsRoute = WorkspaceProjectsRouteImport.update({
-  id: '/projects',
-  path: '/projects',
-  getParentRoute: () => WorkspaceRoute,
-} as any)
 const WorkspaceReportsRoute = WorkspaceReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -120,16 +142,6 @@ const WorkspaceReportsRoute = WorkspaceReportsRouteImport.update({
 const WorkspaceSettingsRoute = WorkspaceSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => WorkspaceRoute,
-} as any)
-const WorkspaceTasksRoute = WorkspaceTasksRouteImport.update({
-  id: '/tasks',
-  path: '/tasks',
-  getParentRoute: () => WorkspaceRoute,
-} as any)
-const WorkspaceTeamRoute = WorkspaceTeamRouteImport.update({
-  id: '/team',
-  path: '/team',
   getParentRoute: () => WorkspaceRoute,
 } as any)
 const WorkspaceTimeRoute = WorkspaceTimeRouteImport.update({
@@ -150,6 +162,11 @@ const EmployeeActivityRoute = EmployeeActivityRouteImport.update({
 const EmployeeChatRoute = EmployeeChatRouteImport.update({
   id: '/chat',
   path: '/chat',
+  getParentRoute: () => EmployeeRoute,
+} as any)
+const EmployeeNotificationsRoute = EmployeeNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => EmployeeRoute,
 } as any)
 const EmployeeProfileRoute = EmployeeProfileRouteImport.update({
@@ -187,17 +204,27 @@ const InviteTokenRoute = InviteTokenRouteImport.update({
   path: '/invite/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WorkspaceClientsClientIdRoute =
-  WorkspaceClientsClientIdRouteImport.update({
-    id: '/$clientId',
-    path: '/$clientId',
-    getParentRoute: () => WorkspaceClientsRoute,
+const WorkspaceClientsIndexRoute = WorkspaceClientsIndexRouteImport.update({
+  id: '/clients/',
+  path: '/clients/',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceClientsClientSlugRoute =
+  WorkspaceClientsClientSlugRouteImport.update({
+    id: '/clients/$clientSlug',
+    path: '/clients/$clientSlug',
+    getParentRoute: () => WorkspaceRoute,
   } as any)
-const WorkspaceProjectsProjectIdRoute =
-  WorkspaceProjectsProjectIdRouteImport.update({
-    id: '/$projectId',
-    path: '/$projectId',
-    getParentRoute: () => WorkspaceProjectsRoute,
+const WorkspaceProjectsIndexRoute = WorkspaceProjectsIndexRouteImport.update({
+  id: '/projects/',
+  path: '/projects/',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceProjectsProjectSlugRoute =
+  WorkspaceProjectsProjectSlugRouteImport.update({
+    id: '/projects/$projectSlug',
+    path: '/projects/$projectSlug',
+    getParentRoute: () => WorkspaceRoute,
   } as any)
 const WorkspaceReportsClientsRoute = WorkspaceReportsClientsRouteImport.update({
   id: '/clients',
@@ -226,10 +253,25 @@ const WorkspaceReportsTeamRoute = WorkspaceReportsTeamRouteImport.update({
   path: '/team',
   getParentRoute: () => WorkspaceReportsRoute,
 } as any)
-const WorkspaceTeamMemberIdRoute = WorkspaceTeamMemberIdRouteImport.update({
-  id: '/$memberId',
-  path: '/$memberId',
-  getParentRoute: () => WorkspaceTeamRoute,
+const WorkspaceTasksIndexRoute = WorkspaceTasksIndexRouteImport.update({
+  id: '/tasks/',
+  path: '/tasks/',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceTasksTaskSlugRoute = WorkspaceTasksTaskSlugRouteImport.update({
+  id: '/tasks/$taskSlug',
+  path: '/tasks/$taskSlug',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceTeamIndexRoute = WorkspaceTeamIndexRouteImport.update({
+  id: '/team/',
+  path: '/team/',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
+const WorkspaceTeamMemberSlugRoute = WorkspaceTeamMemberSlugRouteImport.update({
+  id: '/team/$memberSlug',
+  path: '/team/$memberSlug',
+  getParentRoute: () => WorkspaceRoute,
 } as any)
 const EmployeeProjectsIndexRoute = EmployeeProjectsIndexRouteImport.update({
   id: '/',
@@ -245,23 +287,25 @@ const EmployeeProjectsIdRoute = EmployeeProjectsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/employee': typeof EmployeeRouteWithChildren
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/activity': typeof WorkspaceActivityRoute
   '/admin': typeof WorkspaceAdminRoute
   '/app': typeof WorkspaceAppRoute
   '/billing': typeof WorkspaceBillingRoute
   '/chat': typeof WorkspaceChatRoute
-  '/clients': typeof WorkspaceClientsRouteWithChildren
   '/expenses': typeof WorkspaceExpensesRoute
   '/notifications': typeof WorkspaceNotificationsRoute
   '/profile': typeof WorkspaceProfileRoute
-  '/projects': typeof WorkspaceProjectsRouteWithChildren
   '/reports': typeof WorkspaceReportsRouteWithChildren
   '/settings': typeof WorkspaceSettingsRoute
-  '/tasks': typeof WorkspaceTasksRoute
-  '/team': typeof WorkspaceTeamRouteWithChildren
   '/time': typeof WorkspaceTimeRoute
   '/employee/activity': typeof EmployeeActivityRoute
   '/employee/chat': typeof EmployeeChatRoute
+  '/employee/notifications': typeof EmployeeNotificationsRoute
   '/employee/profile': typeof EmployeeProfileRoute
   '/employee/projects': typeof EmployeeProjectsRouteWithChildren
   '/employee/settings': typeof EmployeeSettingsRoute
@@ -270,36 +314,43 @@ export interface FileRoutesByFullPath {
   '/employee/time': typeof EmployeeTimeRoute
   '/invite/$token': typeof InviteTokenRoute
   '/employee/': typeof EmployeeIndexRoute
-  '/clients/$clientId': typeof WorkspaceClientsClientIdRoute
-  '/projects/$projectId': typeof WorkspaceProjectsProjectIdRoute
+  '/clients/$clientSlug': typeof WorkspaceClientsClientSlugRoute
+  '/projects/$projectSlug': typeof WorkspaceProjectsProjectSlugRoute
   '/reports/clients': typeof WorkspaceReportsClientsRoute
   '/reports/expenses': typeof WorkspaceReportsExpensesRoute
   '/reports/projects': typeof WorkspaceReportsProjectsRoute
   '/reports/revenue': typeof WorkspaceReportsRevenueRoute
   '/reports/team': typeof WorkspaceReportsTeamRoute
-  '/team/$memberId': typeof WorkspaceTeamMemberIdRoute
+  '/tasks/$taskSlug': typeof WorkspaceTasksTaskSlugRoute
+  '/team/$memberSlug': typeof WorkspaceTeamMemberSlugRoute
   '/employee/projects/$id': typeof EmployeeProjectsIdRoute
+  '/clients/': typeof WorkspaceClientsIndexRoute
+  '/projects/': typeof WorkspaceProjectsIndexRoute
+  '/tasks/': typeof WorkspaceTasksIndexRoute
+  '/team/': typeof WorkspaceTeamIndexRoute
   '/employee/projects/': typeof EmployeeProjectsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/activity': typeof WorkspaceActivityRoute
   '/admin': typeof WorkspaceAdminRoute
   '/app': typeof WorkspaceAppRoute
   '/billing': typeof WorkspaceBillingRoute
   '/chat': typeof WorkspaceChatRoute
-  '/clients': typeof WorkspaceClientsRouteWithChildren
   '/expenses': typeof WorkspaceExpensesRoute
   '/notifications': typeof WorkspaceNotificationsRoute
   '/profile': typeof WorkspaceProfileRoute
-  '/projects': typeof WorkspaceProjectsRouteWithChildren
   '/reports': typeof WorkspaceReportsRouteWithChildren
   '/settings': typeof WorkspaceSettingsRoute
-  '/tasks': typeof WorkspaceTasksRoute
-  '/team': typeof WorkspaceTeamRouteWithChildren
   '/time': typeof WorkspaceTimeRoute
   '/employee/activity': typeof EmployeeActivityRoute
   '/employee/chat': typeof EmployeeChatRoute
+  '/employee/notifications': typeof EmployeeNotificationsRoute
   '/employee/profile': typeof EmployeeProfileRoute
   '/employee/settings': typeof EmployeeSettingsRoute
   '/employee/tasks': typeof EmployeeTasksRoute
@@ -307,15 +358,20 @@ export interface FileRoutesByTo {
   '/employee/time': typeof EmployeeTimeRoute
   '/invite/$token': typeof InviteTokenRoute
   '/employee': typeof EmployeeIndexRoute
-  '/clients/$clientId': typeof WorkspaceClientsClientIdRoute
-  '/projects/$projectId': typeof WorkspaceProjectsProjectIdRoute
+  '/clients/$clientSlug': typeof WorkspaceClientsClientSlugRoute
+  '/projects/$projectSlug': typeof WorkspaceProjectsProjectSlugRoute
   '/reports/clients': typeof WorkspaceReportsClientsRoute
   '/reports/expenses': typeof WorkspaceReportsExpensesRoute
   '/reports/projects': typeof WorkspaceReportsProjectsRoute
   '/reports/revenue': typeof WorkspaceReportsRevenueRoute
   '/reports/team': typeof WorkspaceReportsTeamRoute
-  '/team/$memberId': typeof WorkspaceTeamMemberIdRoute
+  '/tasks/$taskSlug': typeof WorkspaceTasksTaskSlugRoute
+  '/team/$memberSlug': typeof WorkspaceTeamMemberSlugRoute
   '/employee/projects/$id': typeof EmployeeProjectsIdRoute
+  '/clients': typeof WorkspaceClientsIndexRoute
+  '/projects': typeof WorkspaceProjectsIndexRoute
+  '/tasks': typeof WorkspaceTasksIndexRoute
+  '/team': typeof WorkspaceTeamIndexRoute
   '/employee/projects': typeof EmployeeProjectsIndexRoute
 }
 export interface FileRoutesById {
@@ -323,23 +379,25 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_workspace': typeof WorkspaceRouteWithChildren
   '/employee': typeof EmployeeRouteWithChildren
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/_workspace/activity': typeof WorkspaceActivityRoute
   '/_workspace/admin': typeof WorkspaceAdminRoute
   '/_workspace/app': typeof WorkspaceAppRoute
   '/_workspace/billing': typeof WorkspaceBillingRoute
   '/_workspace/chat': typeof WorkspaceChatRoute
-  '/_workspace/clients': typeof WorkspaceClientsRouteWithChildren
   '/_workspace/expenses': typeof WorkspaceExpensesRoute
   '/_workspace/notifications': typeof WorkspaceNotificationsRoute
   '/_workspace/profile': typeof WorkspaceProfileRoute
-  '/_workspace/projects': typeof WorkspaceProjectsRouteWithChildren
   '/_workspace/reports': typeof WorkspaceReportsRouteWithChildren
   '/_workspace/settings': typeof WorkspaceSettingsRoute
-  '/_workspace/tasks': typeof WorkspaceTasksRoute
-  '/_workspace/team': typeof WorkspaceTeamRouteWithChildren
   '/_workspace/time': typeof WorkspaceTimeRoute
   '/employee/activity': typeof EmployeeActivityRoute
   '/employee/chat': typeof EmployeeChatRoute
+  '/employee/notifications': typeof EmployeeNotificationsRoute
   '/employee/profile': typeof EmployeeProfileRoute
   '/employee/projects': typeof EmployeeProjectsRouteWithChildren
   '/employee/settings': typeof EmployeeSettingsRoute
@@ -348,15 +406,20 @@ export interface FileRoutesById {
   '/employee/time': typeof EmployeeTimeRoute
   '/invite/$token': typeof InviteTokenRoute
   '/employee/': typeof EmployeeIndexRoute
-  '/_workspace/clients/$clientId': typeof WorkspaceClientsClientIdRoute
-  '/_workspace/projects/$projectId': typeof WorkspaceProjectsProjectIdRoute
+  '/_workspace/clients/$clientSlug': typeof WorkspaceClientsClientSlugRoute
+  '/_workspace/projects/$projectSlug': typeof WorkspaceProjectsProjectSlugRoute
   '/_workspace/reports/clients': typeof WorkspaceReportsClientsRoute
   '/_workspace/reports/expenses': typeof WorkspaceReportsExpensesRoute
   '/_workspace/reports/projects': typeof WorkspaceReportsProjectsRoute
   '/_workspace/reports/revenue': typeof WorkspaceReportsRevenueRoute
   '/_workspace/reports/team': typeof WorkspaceReportsTeamRoute
-  '/_workspace/team/$memberId': typeof WorkspaceTeamMemberIdRoute
+  '/_workspace/tasks/$taskSlug': typeof WorkspaceTasksTaskSlugRoute
+  '/_workspace/team/$memberSlug': typeof WorkspaceTeamMemberSlugRoute
   '/employee/projects/$id': typeof EmployeeProjectsIdRoute
+  '/_workspace/clients/': typeof WorkspaceClientsIndexRoute
+  '/_workspace/projects/': typeof WorkspaceProjectsIndexRoute
+  '/_workspace/tasks/': typeof WorkspaceTasksIndexRoute
+  '/_workspace/team/': typeof WorkspaceTeamIndexRoute
   '/employee/projects/': typeof EmployeeProjectsIndexRoute
 }
 export interface FileRouteTypes {
@@ -364,23 +427,25 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/employee'
+    | '/forgot-password'
+    | '/login'
+    | '/register'
+    | '/reset-password'
+    | '/verify-email'
     | '/activity'
     | '/admin'
     | '/app'
     | '/billing'
     | '/chat'
-    | '/clients'
     | '/expenses'
     | '/notifications'
     | '/profile'
-    | '/projects'
     | '/reports'
     | '/settings'
-    | '/tasks'
-    | '/team'
     | '/time'
     | '/employee/activity'
     | '/employee/chat'
+    | '/employee/notifications'
     | '/employee/profile'
     | '/employee/projects'
     | '/employee/settings'
@@ -389,36 +454,43 @@ export interface FileRouteTypes {
     | '/employee/time'
     | '/invite/$token'
     | '/employee/'
-    | '/clients/$clientId'
-    | '/projects/$projectId'
+    | '/clients/$clientSlug'
+    | '/projects/$projectSlug'
     | '/reports/clients'
     | '/reports/expenses'
     | '/reports/projects'
     | '/reports/revenue'
     | '/reports/team'
-    | '/team/$memberId'
+    | '/tasks/$taskSlug'
+    | '/team/$memberSlug'
     | '/employee/projects/$id'
+    | '/clients/'
+    | '/projects/'
+    | '/tasks/'
+    | '/team/'
     | '/employee/projects/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/forgot-password'
+    | '/login'
+    | '/register'
+    | '/reset-password'
+    | '/verify-email'
     | '/activity'
     | '/admin'
     | '/app'
     | '/billing'
     | '/chat'
-    | '/clients'
     | '/expenses'
     | '/notifications'
     | '/profile'
-    | '/projects'
     | '/reports'
     | '/settings'
-    | '/tasks'
-    | '/team'
     | '/time'
     | '/employee/activity'
     | '/employee/chat'
+    | '/employee/notifications'
     | '/employee/profile'
     | '/employee/settings'
     | '/employee/tasks'
@@ -426,38 +498,45 @@ export interface FileRouteTypes {
     | '/employee/time'
     | '/invite/$token'
     | '/employee'
-    | '/clients/$clientId'
-    | '/projects/$projectId'
+    | '/clients/$clientSlug'
+    | '/projects/$projectSlug'
     | '/reports/clients'
     | '/reports/expenses'
     | '/reports/projects'
     | '/reports/revenue'
     | '/reports/team'
-    | '/team/$memberId'
+    | '/tasks/$taskSlug'
+    | '/team/$memberSlug'
     | '/employee/projects/$id'
+    | '/clients'
+    | '/projects'
+    | '/tasks'
+    | '/team'
     | '/employee/projects'
   id:
     | '__root__'
     | '/'
     | '/_workspace'
     | '/employee'
+    | '/forgot-password'
+    | '/login'
+    | '/register'
+    | '/reset-password'
+    | '/verify-email'
     | '/_workspace/activity'
     | '/_workspace/admin'
     | '/_workspace/app'
     | '/_workspace/billing'
     | '/_workspace/chat'
-    | '/_workspace/clients'
     | '/_workspace/expenses'
     | '/_workspace/notifications'
     | '/_workspace/profile'
-    | '/_workspace/projects'
     | '/_workspace/reports'
     | '/_workspace/settings'
-    | '/_workspace/tasks'
-    | '/_workspace/team'
     | '/_workspace/time'
     | '/employee/activity'
     | '/employee/chat'
+    | '/employee/notifications'
     | '/employee/profile'
     | '/employee/projects'
     | '/employee/settings'
@@ -466,15 +545,20 @@ export interface FileRouteTypes {
     | '/employee/time'
     | '/invite/$token'
     | '/employee/'
-    | '/_workspace/clients/$clientId'
-    | '/_workspace/projects/$projectId'
+    | '/_workspace/clients/$clientSlug'
+    | '/_workspace/projects/$projectSlug'
     | '/_workspace/reports/clients'
     | '/_workspace/reports/expenses'
     | '/_workspace/reports/projects'
     | '/_workspace/reports/revenue'
     | '/_workspace/reports/team'
-    | '/_workspace/team/$memberId'
+    | '/_workspace/tasks/$taskSlug'
+    | '/_workspace/team/$memberSlug'
     | '/employee/projects/$id'
+    | '/_workspace/clients/'
+    | '/_workspace/projects/'
+    | '/_workspace/tasks/'
+    | '/_workspace/team/'
     | '/employee/projects/'
   fileRoutesById: FileRoutesById
 }
@@ -482,6 +566,11 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   WorkspaceRoute: typeof WorkspaceRouteWithChildren
   EmployeeRoute: typeof EmployeeRouteWithChildren
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
+  LoginRoute: typeof LoginRoute
+  RegisterRoute: typeof RegisterRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  VerifyEmailRoute: typeof VerifyEmailRoute
   InviteTokenRoute: typeof InviteTokenRoute
 }
 
@@ -506,6 +595,41 @@ declare module '@tanstack/react-router' {
       path: '/employee'
       fullPath: '/employee'
       preLoaderRoute: typeof EmployeeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify-email': {
+      id: '/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof VerifyEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_workspace/activity': {
@@ -543,13 +667,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceChatRouteImport
       parentRoute: typeof WorkspaceRoute
     }
-    '/_workspace/clients': {
-      id: '/_workspace/clients'
-      path: '/clients'
-      fullPath: '/clients'
-      preLoaderRoute: typeof WorkspaceClientsRouteImport
-      parentRoute: typeof WorkspaceRoute
-    }
     '/_workspace/expenses': {
       id: '/_workspace/expenses'
       path: '/expenses'
@@ -571,13 +688,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceProfileRouteImport
       parentRoute: typeof WorkspaceRoute
     }
-    '/_workspace/projects': {
-      id: '/_workspace/projects'
-      path: '/projects'
-      fullPath: '/projects'
-      preLoaderRoute: typeof WorkspaceProjectsRouteImport
-      parentRoute: typeof WorkspaceRoute
-    }
     '/_workspace/reports': {
       id: '/_workspace/reports'
       path: '/reports'
@@ -590,20 +700,6 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof WorkspaceSettingsRouteImport
-      parentRoute: typeof WorkspaceRoute
-    }
-    '/_workspace/tasks': {
-      id: '/_workspace/tasks'
-      path: '/tasks'
-      fullPath: '/tasks'
-      preLoaderRoute: typeof WorkspaceTasksRouteImport
-      parentRoute: typeof WorkspaceRoute
-    }
-    '/_workspace/team': {
-      id: '/_workspace/team'
-      path: '/team'
-      fullPath: '/team'
-      preLoaderRoute: typeof WorkspaceTeamRouteImport
       parentRoute: typeof WorkspaceRoute
     }
     '/_workspace/time': {
@@ -632,6 +728,13 @@ declare module '@tanstack/react-router' {
       path: '/chat'
       fullPath: '/employee/chat'
       preLoaderRoute: typeof EmployeeChatRouteImport
+      parentRoute: typeof EmployeeRoute
+    }
+    '/employee/notifications': {
+      id: '/employee/notifications'
+      path: '/notifications'
+      fullPath: '/employee/notifications'
+      preLoaderRoute: typeof EmployeeNotificationsRouteImport
       parentRoute: typeof EmployeeRoute
     }
     '/employee/profile': {
@@ -683,19 +786,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InviteTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_workspace/clients/$clientId': {
-      id: '/_workspace/clients/$clientId'
-      path: '/$clientId'
-      fullPath: '/clients/$clientId'
-      preLoaderRoute: typeof WorkspaceClientsClientIdRouteImport
-      parentRoute: typeof WorkspaceClientsRoute
+    '/_workspace/clients/': {
+      id: '/_workspace/clients/'
+      path: '/clients'
+      fullPath: '/clients/'
+      preLoaderRoute: typeof WorkspaceClientsIndexRouteImport
+      parentRoute: typeof WorkspaceRoute
     }
-    '/_workspace/projects/$projectId': {
-      id: '/_workspace/projects/$projectId'
-      path: '/$projectId'
-      fullPath: '/projects/$projectId'
-      preLoaderRoute: typeof WorkspaceProjectsProjectIdRouteImport
-      parentRoute: typeof WorkspaceProjectsRoute
+    '/_workspace/clients/$clientSlug': {
+      id: '/_workspace/clients/$clientSlug'
+      path: '/clients/$clientSlug'
+      fullPath: '/clients/$clientSlug'
+      preLoaderRoute: typeof WorkspaceClientsClientSlugRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/_workspace/projects/': {
+      id: '/_workspace/projects/'
+      path: '/projects'
+      fullPath: '/projects/'
+      preLoaderRoute: typeof WorkspaceProjectsIndexRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/_workspace/projects/$projectSlug': {
+      id: '/_workspace/projects/$projectSlug'
+      path: '/projects/$projectSlug'
+      fullPath: '/projects/$projectSlug'
+      preLoaderRoute: typeof WorkspaceProjectsProjectSlugRouteImport
+      parentRoute: typeof WorkspaceRoute
     }
     '/_workspace/reports/clients': {
       id: '/_workspace/reports/clients'
@@ -732,12 +849,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceReportsTeamRouteImport
       parentRoute: typeof WorkspaceReportsRoute
     }
-    '/_workspace/team/$memberId': {
-      id: '/_workspace/team/$memberId'
-      path: '/$memberId'
-      fullPath: '/team/$memberId'
-      preLoaderRoute: typeof WorkspaceTeamMemberIdRouteImport
-      parentRoute: typeof WorkspaceTeamRoute
+    '/_workspace/tasks/': {
+      id: '/_workspace/tasks/'
+      path: '/tasks'
+      fullPath: '/tasks/'
+      preLoaderRoute: typeof WorkspaceTasksIndexRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/_workspace/tasks/$taskSlug': {
+      id: '/_workspace/tasks/$taskSlug'
+      path: '/tasks/$taskSlug'
+      fullPath: '/tasks/$taskSlug'
+      preLoaderRoute: typeof WorkspaceTasksTaskSlugRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/_workspace/team/': {
+      id: '/_workspace/team/'
+      path: '/team'
+      fullPath: '/team/'
+      preLoaderRoute: typeof WorkspaceTeamIndexRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
+    '/_workspace/team/$memberSlug': {
+      id: '/_workspace/team/$memberSlug'
+      path: '/team/$memberSlug'
+      fullPath: '/team/$memberSlug'
+      preLoaderRoute: typeof WorkspaceTeamMemberSlugRouteImport
+      parentRoute: typeof WorkspaceRoute
     }
     '/employee/projects/': {
       id: '/employee/projects/'
@@ -755,28 +893,6 @@ declare module '@tanstack/react-router' {
     }
   }
 }
-
-interface WorkspaceClientsRouteChildren {
-  WorkspaceClientsClientIdRoute: typeof WorkspaceClientsClientIdRoute
-}
-
-const WorkspaceClientsRouteChildren: WorkspaceClientsRouteChildren = {
-  WorkspaceClientsClientIdRoute: WorkspaceClientsClientIdRoute,
-}
-
-const WorkspaceClientsRouteWithChildren =
-  WorkspaceClientsRoute._addFileChildren(WorkspaceClientsRouteChildren)
-
-interface WorkspaceProjectsRouteChildren {
-  WorkspaceProjectsProjectIdRoute: typeof WorkspaceProjectsProjectIdRoute
-}
-
-const WorkspaceProjectsRouteChildren: WorkspaceProjectsRouteChildren = {
-  WorkspaceProjectsProjectIdRoute: WorkspaceProjectsProjectIdRoute,
-}
-
-const WorkspaceProjectsRouteWithChildren =
-  WorkspaceProjectsRoute._addFileChildren(WorkspaceProjectsRouteChildren)
 
 interface WorkspaceReportsRouteChildren {
   WorkspaceReportsClientsRoute: typeof WorkspaceReportsClientsRoute
@@ -797,34 +913,26 @@ const WorkspaceReportsRouteChildren: WorkspaceReportsRouteChildren = {
 const WorkspaceReportsRouteWithChildren =
   WorkspaceReportsRoute._addFileChildren(WorkspaceReportsRouteChildren)
 
-interface WorkspaceTeamRouteChildren {
-  WorkspaceTeamMemberIdRoute: typeof WorkspaceTeamMemberIdRoute
-}
-
-const WorkspaceTeamRouteChildren: WorkspaceTeamRouteChildren = {
-  WorkspaceTeamMemberIdRoute: WorkspaceTeamMemberIdRoute,
-}
-
-const WorkspaceTeamRouteWithChildren = WorkspaceTeamRoute._addFileChildren(
-  WorkspaceTeamRouteChildren,
-)
-
 interface WorkspaceRouteChildren {
   WorkspaceActivityRoute: typeof WorkspaceActivityRoute
   WorkspaceAdminRoute: typeof WorkspaceAdminRoute
   WorkspaceAppRoute: typeof WorkspaceAppRoute
   WorkspaceBillingRoute: typeof WorkspaceBillingRoute
   WorkspaceChatRoute: typeof WorkspaceChatRoute
-  WorkspaceClientsRoute: typeof WorkspaceClientsRouteWithChildren
   WorkspaceExpensesRoute: typeof WorkspaceExpensesRoute
   WorkspaceNotificationsRoute: typeof WorkspaceNotificationsRoute
   WorkspaceProfileRoute: typeof WorkspaceProfileRoute
-  WorkspaceProjectsRoute: typeof WorkspaceProjectsRouteWithChildren
   WorkspaceReportsRoute: typeof WorkspaceReportsRouteWithChildren
   WorkspaceSettingsRoute: typeof WorkspaceSettingsRoute
-  WorkspaceTasksRoute: typeof WorkspaceTasksRoute
-  WorkspaceTeamRoute: typeof WorkspaceTeamRouteWithChildren
   WorkspaceTimeRoute: typeof WorkspaceTimeRoute
+  WorkspaceClientsClientSlugRoute: typeof WorkspaceClientsClientSlugRoute
+  WorkspaceProjectsProjectSlugRoute: typeof WorkspaceProjectsProjectSlugRoute
+  WorkspaceTasksTaskSlugRoute: typeof WorkspaceTasksTaskSlugRoute
+  WorkspaceTeamMemberSlugRoute: typeof WorkspaceTeamMemberSlugRoute
+  WorkspaceClientsIndexRoute: typeof WorkspaceClientsIndexRoute
+  WorkspaceProjectsIndexRoute: typeof WorkspaceProjectsIndexRoute
+  WorkspaceTasksIndexRoute: typeof WorkspaceTasksIndexRoute
+  WorkspaceTeamIndexRoute: typeof WorkspaceTeamIndexRoute
 }
 
 const WorkspaceRouteChildren: WorkspaceRouteChildren = {
@@ -833,16 +941,20 @@ const WorkspaceRouteChildren: WorkspaceRouteChildren = {
   WorkspaceAppRoute: WorkspaceAppRoute,
   WorkspaceBillingRoute: WorkspaceBillingRoute,
   WorkspaceChatRoute: WorkspaceChatRoute,
-  WorkspaceClientsRoute: WorkspaceClientsRouteWithChildren,
   WorkspaceExpensesRoute: WorkspaceExpensesRoute,
   WorkspaceNotificationsRoute: WorkspaceNotificationsRoute,
   WorkspaceProfileRoute: WorkspaceProfileRoute,
-  WorkspaceProjectsRoute: WorkspaceProjectsRouteWithChildren,
   WorkspaceReportsRoute: WorkspaceReportsRouteWithChildren,
   WorkspaceSettingsRoute: WorkspaceSettingsRoute,
-  WorkspaceTasksRoute: WorkspaceTasksRoute,
-  WorkspaceTeamRoute: WorkspaceTeamRouteWithChildren,
   WorkspaceTimeRoute: WorkspaceTimeRoute,
+  WorkspaceClientsClientSlugRoute: WorkspaceClientsClientSlugRoute,
+  WorkspaceProjectsProjectSlugRoute: WorkspaceProjectsProjectSlugRoute,
+  WorkspaceTasksTaskSlugRoute: WorkspaceTasksTaskSlugRoute,
+  WorkspaceTeamMemberSlugRoute: WorkspaceTeamMemberSlugRoute,
+  WorkspaceClientsIndexRoute: WorkspaceClientsIndexRoute,
+  WorkspaceProjectsIndexRoute: WorkspaceProjectsIndexRoute,
+  WorkspaceTasksIndexRoute: WorkspaceTasksIndexRoute,
+  WorkspaceTeamIndexRoute: WorkspaceTeamIndexRoute,
 }
 
 const WorkspaceRouteWithChildren = WorkspaceRoute._addFileChildren(
@@ -865,6 +977,7 @@ const EmployeeProjectsRouteWithChildren =
 interface EmployeeRouteChildren {
   EmployeeActivityRoute: typeof EmployeeActivityRoute
   EmployeeChatRoute: typeof EmployeeChatRoute
+  EmployeeNotificationsRoute: typeof EmployeeNotificationsRoute
   EmployeeProfileRoute: typeof EmployeeProfileRoute
   EmployeeProjectsRoute: typeof EmployeeProjectsRouteWithChildren
   EmployeeSettingsRoute: typeof EmployeeSettingsRoute
@@ -877,6 +990,7 @@ interface EmployeeRouteChildren {
 const EmployeeRouteChildren: EmployeeRouteChildren = {
   EmployeeActivityRoute: EmployeeActivityRoute,
   EmployeeChatRoute: EmployeeChatRoute,
+  EmployeeNotificationsRoute: EmployeeNotificationsRoute,
   EmployeeProfileRoute: EmployeeProfileRoute,
   EmployeeProjectsRoute: EmployeeProjectsRouteWithChildren,
   EmployeeSettingsRoute: EmployeeSettingsRoute,
@@ -894,6 +1008,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   WorkspaceRoute: WorkspaceRouteWithChildren,
   EmployeeRoute: EmployeeRouteWithChildren,
+  ForgotPasswordRoute: ForgotPasswordRoute,
+  LoginRoute: LoginRoute,
+  RegisterRoute: RegisterRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  VerifyEmailRoute: VerifyEmailRoute,
   InviteTokenRoute: InviteTokenRoute,
 }
 export const routeTree = rootRouteImport

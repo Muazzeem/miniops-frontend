@@ -1,0 +1,2 @@
+import {createFileRoute} from '@tanstack/react-router';import {TaskDetail} from '@/features/tasks';
+export const Route=createFileRoute('/_workspace/tasks/$taskSlug')({head:()=>({meta:[{title:'Task — MiniOps'},{name:'description',content:'Task details, assignee and due date.'},{property:'og:title',content:'Task — MiniOps'},{property:'og:description',content:'Task details, assignee and due date.'},{property:'og:type',content:'website'},{name:'twitter:card',content:'summary_large_image'}]}),component:()=> <TaskDetail slug={Route.useParams().taskSlug}/>});

@@ -1,5 +1,8 @@
+import type {WorkingDays} from '@/lib/workspace-options';
 export type Health='Healthy'|'Attention'|'At Risk'|'Loss';
-export type Project={id:string;name:string;client:string;status:string;revenue:number;budget:number;cost:number;profit:number;margin:number;progress:number;budgetUsed:number;health:Health};
+export type Project={id:string;name:string;client:string;status:string;revenue:number;budget:number;cost:number;profit:number;margin:number;progress:number;budgetUsed:number;health:Health;
+  // Present for projects loaded from the API.
+  clientSlug?:string|null;team?:number[];projectType?:string;description?:string;startDate?:string|null;endDate?:string|null;createdAt?:string};
 export type Client=[string,string,string,number,number];
 export type TeamMember=[string,string,string,number,number,number,number];
 export type Task=[string,string,string,string,string,string];
@@ -8,7 +11,9 @@ export type TimeEntry=[string,string,string,string,number,string,number];
 export type ChartPoint={month:string;revenue:number;cost:number;profit:number};
 export type Subscription={id:string;name:string;vendor:string;category:string;amount:number;billingCycle:'Monthly'|'Quarterly'|'Yearly';nextRenewal:string;paymentMethod:string;status:'Active'|'Paused';notes:string};
 export type WorkspaceData={projects:Project[];clients:Client[];team:TeamMember[];tasks:Task[];expenses:Expense[];timeEntries:TimeEntry[];chartData:ChartPoint[];subscriptions:Subscription[]};
-export type Workspace={id:string;name:string;industry:string;currency:string;timezone:string;role:string;data:WorkspaceData};
+export type Workspace={id:string;name:string;industry:string;currency:string;timezone:string;workingDays:WorkingDays;role:string;data:WorkspaceData;
+  // From the API: the current user's access per module, and their member slug.
+  permissions?:Partial<Record<string,'none'|'view'|'edit'>>;memberSlug?:string};
 export const projects:Project[]=[
 {id:'acme-website',name:'Acme Website Redesign',client:'Acme Health',status:'Active',revenue:8500,budget:4500,cost:4500,profit:4000,margin:47.1,progress:72,budgetUsed:78,health:'Healthy'},
 {id:'atlas-portal',name:'Atlas Client Portal',client:'Atlas Legal',status:'At Risk',revenue:18000,budget:12000,cost:11040,profit:6960,margin:38.7,progress:63,budgetUsed:92,health:'At Risk'},
@@ -31,8 +36,8 @@ export const subscriptions:Subscription[]=[
 const scaleProjects=(source:Project[],factor:number,prefix:string)=>source.slice(0,4).map((p,index)=>{const revenue=Math.round(p.revenue*factor);const cost=Math.round(p.cost*factor);return {...p,id:`${prefix}-${p.id}`,name:index===0?`${prefix==='crevion'?'Luma':'Orbit'} Website`:p.name,revenue,cost,budget:Math.round(p.budget*factor),profit:revenue-cost,margin:Number((((revenue-cost)/Math.max(revenue,1))*100).toFixed(1))}});
 const workspaceData=(factor:number,prefix:string):WorkspaceData=>({projects:scaleProjects(projects,factor,prefix),clients:clients.slice(0,prefix==='northstar'?clients.length:4).map(c=>[`${prefix}-${c[0]}`,c[1],c[2],Math.round(c[3]*factor),c[4]]),team:team.slice(0,prefix==='northstar'?team.length:5),tasks:tasks.slice(0,prefix==='northstar'?tasks.length:4),expenses:expenses.slice(0,prefix==='northstar'?expenses.length:3),timeEntries:timeEntries.slice(0,prefix==='northstar'?timeEntries.length:3),chartData:chartData.map(point=>({...point,revenue:Math.round(point.revenue*factor),cost:Math.round(point.cost*factor),profit:Math.round(point.profit*factor)})),subscriptions:subscriptions.slice(0,prefix==='northstar'?subscriptions.length:3).map(item=>({...item,id:`${prefix}-${item.id}`}))});
 export const initialWorkspaces:Workspace[]=[
- {id:'northstar',name:'Northstar Digital',industry:'Web Development',currency:'USD',timezone:'Asia/Dhaka (UTC+6)',role:'Owner',data:workspaceData(1,'northstar')},
- {id:'crevion',name:'Crevion Studio',industry:'UX/UI Design',currency:'USD',timezone:'Asia/Dhaka (UTC+6)',role:'Owner',data:workspaceData(.500592,'crevion')},
- {id:'brightlabs',name:'BrightLabs',industry:'Software Development',currency:'USD',timezone:'America/New_York',role:'Admin',data:workspaceData(.72,'brightlabs')}
+ {id:'northstar',name:'Northstar Digital',industry:'Web Development',currency:'USD',timezone:'Asia/Dhaka',workingDays:'sun_thu',role:'Owner',data:workspaceData(1,'northstar')},
+ {id:'crevion',name:'Crevion Studio',industry:'UX/UI Design',currency:'USD',timezone:'Asia/Dhaka',workingDays:'sun_thu',role:'Owner',data:workspaceData(.500592,'crevion')},
+ {id:'brightlabs',name:'BrightLabs',industry:'Software Development',currency:'USD',timezone:'America/New_York',workingDays:'mon_fri',role:'Admin',data:workspaceData(.72,'brightlabs')}
 ];
 export const money=(v:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(v);

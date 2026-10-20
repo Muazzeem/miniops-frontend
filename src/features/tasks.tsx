@@ -1,0 +1,919 @@
+import { useMemo, useState, type DragEvent, type FormEvent, type ReactNode } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardList,
+  LayoutGrid,
+  List,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { PageHeader, Status } from "@/components/miniops/core";
+import { Section } from "@/components/miniops/forms";
+import { SearchableSelect } from "@/components/miniops/select-search";
+import {
+  DateInput,
+  DateRangePicker,
+  formatDisplayDate,
+  toIso,
+  type IsoRange,
+} from "@/components/miniops/date-time";
+import { TASK_PRIORITIES, TASK_STATUSES, type TaskStatus } from "@/lib/api";
+import { cn } from "@/lib/utils";
+import { ErrorState, NoAccess, SignInPrompt } from "./projects";
+import { useMiniOps, type TaskInput, type TaskItem } from "./store";
+
+const NO_PROJECT = "__none__";
+const UNASSIGNED = "__unassigned__";
+const OVERDUE = "__overdue__";
+const PRIORITY_RANK = { Urgent: 0, High: 1, Medium: 2, Low: 3 } as const;
+
+/** Open work first, by due date (undated last), then priority; finished work at the end. */
+function byUrgency(a: TaskItem, b: TaskItem) {
+  const done = Number(a.status === "Done") - Number(b.status === "Done");
+  if (done) return done;
+  const due = (a.dueDate || "9999").localeCompare(b.dueDate || "9999");
+  return due || PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority];
+}
+
+function DueDate({ task, className }: { task: TaskItem; className?: string }) {
+  if (!task.dueDate) return <span className="text-muted-foreground">—</span>;
+  return (
+    <span className={cn(task.isOverdue && "font-medium text-destructive", className)}>
+      {formatDisplayDate(task.dueDate)}
+      {task.isOverdue && " · Overdue"}
+    </span>
+  );
+}
+
+export function Tasks() {
+  const { taskList, tasksState, projects, members, can, authStatus } = useMiniOps();
+  const canEdit = can("tasks", "edit");
+  const [view, setView] = useState<"list" | "board" | "calendar">("list");
+  const [q, setQ] = useState("");
+  const [project, setProject] = useState("");
+  const [assignee, setAssignee] = useState("");
+  const [status, setStatus] = useState("all");
+  const [priority, setPriority] = useState("all");
+  const [range, setRange] = useState<IsoRange>({ from: "", to: "" });
+
+  const rows = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    return taskList
+      .filter((t) => !term || `${t.title} ${t.projectName}`.toLowerCase().includes(term))
+      .filter((t) => !project || (project === NO_PROJECT ? !t.project : t.project === project))
+      .filter(
+        (t) =>
+          !assignee || (assignee === UNASSIGNED ? !t.assignee : String(t.assignee) === assignee),
+      )
+      .filter((t) =>
+        status === "all" ? true : status === OVERDUE ? t.isOverdue : t.status === status,
+      )
+      .filter((t) => priority === "all" || t.priority === priority)
+      .filter((t) => {
+        if (!range.from) return true;
+        return !!t.dueDate && t.dueDate >= range.from && t.dueDate <= (range.to || range.from);
+      })
+      .sort(byUrgency);
+  }, [taskList, q, project, assignee, status, priority, range]);
+  const filtered = Boolean(
+    q || project || assignee || status !== "all" || priority !== "all" || range.from,
+  );
+  const clearFilters = () => {
+    setQ("");
+    setProject("");
+    setAssignee("");
+    setStatus("all");
+    setPriority("all");
+    setRange({ from: "", to: "" });
+  };
+
+  const body = () => {
+    if (authStatus === "signedOut") return <SignInPrompt what="tasks" />;
+    if (tasksState.error)
+      return <ErrorState what="tasks" message={tasksState.error} onRetry={tasksState.retry} />;
+    if (tasksState.loading)
+      return (
+        <div aria-busy="true" aria-label="Loading tasks" className="space-y-2">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-12 rounded-xl" />
+          ))}
+        </div>
+      );
+    if (!can("tasks")) return <NoAccess what="tasks" />;
+    if (taskList.length === 0) return <EmptyTasks canEdit={canEdit} />;
+    return (
+      <>
+        <div className="toolbar justify-between">
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                ["list", "List", <List key="i" />],
+                ["board", "Board", <LayoutGrid key="i" />],
+                ["calendar", "Calendar", <CalendarDays key="i" />],
+              ] as const
+            ).map(([key, label, icon]) => (
+              <Button
+                key={key}
+                variant={view === key ? "secondary" : "ghost"}
+                onClick={() => setView(key)}
+                aria-pressed={view === key}
+              >
+                {icon} {label}
+              </Button>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
+              <Input
+                className="w-56 pl-9"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search tasks…"
+                aria-label="Search tasks"
+              />
+            </div>
+            <SearchableSelect
+              variant="filter"
+              clearable
+              aria-label="Project"
+              placeholder="All projects"
+              searchPlaceholder="Search projects…"
+              options={[
+                ...projects.map((p) => ({ value: p.id, label: p.name })),
+                { value: NO_PROJECT, label: "No project" },
+              ]}
+              value={project}
+              onChange={setProject}
+            />
+            <SearchableSelect
+              variant="filter"
+              clearable
+              aria-label="Assignee"
+              placeholder="Anyone"
+              searchPlaceholder="Search people…"
+              options={[
+                ...members.map((m) => ({ value: String(m.id), label: m.name })),
+                { value: UNASSIGNED, label: "Unassigned" },
+              ]}
+              value={assignee}
+              onChange={setAssignee}
+            />
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger className="w-36" aria-label="Status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value={OVERDUE}>Overdue</SelectItem>
+                {TASK_STATUSES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={priority} onValueChange={setPriority}>
+              <SelectTrigger className="w-36" aria-label="Priority">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Any priority</SelectItem>
+                {TASK_PRIORITIES.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {p}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <DateRangePicker value={range} onChange={setRange} />
+            {filtered && (
+              <Button variant="ghost" onClick={clearFilters}>
+                Clear filters
+              </Button>
+            )}
+          </div>
+        </div>
+        {rows.length === 0 ? (
+          <div className="rounded-2xl bg-card p-10 text-center shadow-card">
+            <p className="font-medium">No tasks match these filters.</p>
+            <Button variant="link" onClick={clearFilters}>
+              Clear filters
+            </Button>
+          </div>
+        ) : view === "list" ? (
+          <TaskTable rows={rows} />
+        ) : view === "board" ? (
+          <TaskBoard rows={rows} canEdit={canEdit} />
+        ) : (
+          <TaskCalendar rows={rows} />
+        )}
+      </>
+    );
+  };
+
+  return (
+    <>
+      <PageHeader
+        title="Tasks"
+        description="What is everyone doing, and what is due?"
+        action={
+          canEdit && (
+            <TaskFormDialog>
+              <Button>
+                <Plus /> New Task
+              </Button>
+            </TaskFormDialog>
+          )
+        }
+      />
+      {body()}
+    </>
+  );
+}
+
+function TaskLink({ task, className }: { task: TaskItem; className?: string }) {
+  return (
+    <Link
+      to="/tasks/$taskSlug"
+      params={{ taskSlug: task.slug }}
+      className={cn("font-medium hover:text-primary", className)}
+    >
+      {task.title}
+    </Link>
+  );
+}
+
+function ProjectLink({ task }: { task: TaskItem }) {
+  if (!task.project) return <span className="text-muted-foreground">No project</span>;
+  return (
+    <Link
+      to="/projects/$projectSlug"
+      params={{ projectSlug: task.project }}
+      className="hover:text-primary"
+    >
+      {task.projectName}
+    </Link>
+  );
+}
+
+/** Shared by the Tasks page and a project's Tasks tab. */
+export function TaskTable({
+  rows,
+  showProject = true,
+}: {
+  rows: TaskItem[];
+  showProject?: boolean;
+}) {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Task</TableHead>
+          {showProject && <TableHead>Project</TableHead>}
+          <TableHead>Assigned to</TableHead>
+          <TableHead>Priority</TableHead>
+          <TableHead>Due date</TableHead>
+          <TableHead>Status</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {rows.map((t) => (
+          <TableRow key={t.slug} className={t.isOverdue ? "bg-danger-soft/30" : undefined}>
+            <TableCell>
+              <TaskLink task={t} />
+            </TableCell>
+            {showProject && (
+              <TableCell>
+                <ProjectLink task={t} />
+              </TableCell>
+            )}
+            <TableCell>
+              {t.assigneeName || <span className="text-muted-foreground">Unassigned</span>}
+            </TableCell>
+            <TableCell>
+              <Status>{t.priority}</Status>
+            </TableCell>
+            <TableCell className="whitespace-nowrap">
+              <DueDate task={t} />
+            </TableCell>
+            <TableCell>
+              <Status>{t.status}</Status>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}
+
+function TaskBoard({ rows, canEdit }: { rows: TaskItem[]; canEdit: boolean }) {
+  const { moveTask } = useMiniOps();
+  const [over, setOver] = useState<TaskStatus | null>(null);
+
+  async function drop(e: DragEvent, status: TaskStatus) {
+    e.preventDefault();
+    setOver(null);
+    const slug = e.dataTransfer.getData("text/plain");
+    const task = rows.find((t) => t.slug === slug);
+    if (!task || task.status === status) return;
+    try {
+      await moveTask(slug, status);
+      toast.success(`Moved to ${status}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't move the task.");
+    }
+  }
+
+  return (
+    <div className="grid gap-4 md:grid-cols-3">
+      {TASK_STATUSES.map((status) => {
+        const column = rows.filter((t) => t.status === status);
+        return (
+          <div
+            key={status}
+            className={cn(
+              "rounded-xl bg-muted/60 p-3 transition-shadow",
+              over === status && "ring-2 ring-primary/40",
+            )}
+            onDragOver={(e) => {
+              if (!canEdit) return;
+              e.preventDefault();
+              setOver(status);
+            }}
+            onDragLeave={() => setOver((s) => (s === status ? null : s))}
+            onDrop={(e) => void drop(e, status)}
+          >
+            <h2 className="mb-3 flex justify-between text-sm font-semibold">
+              {status}
+              <span className="text-muted-foreground">{column.length}</span>
+            </h2>
+            <div className="space-y-2">
+              {column.map((t) => (
+                <div
+                  key={t.slug}
+                  draggable={canEdit && t.canEdit}
+                  onDragStart={(e) => e.dataTransfer.setData("text/plain", t.slug)}
+                  className={cn(
+                    "rounded-lg border bg-card p-3 shadow-xs",
+                    canEdit && t.canEdit && "cursor-grab active:cursor-grabbing",
+                  )}
+                >
+                  <TaskLink task={t} className="text-sm" />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {t.projectName || "No project"}
+                    {t.assigneeName && ` · ${t.assigneeName}`}
+                  </p>
+                  <div className="mt-3 flex items-center justify-between text-xs">
+                    <Status>{t.priority}</Status>
+                    <DueDate task={t} />
+                  </div>
+                </div>
+              ))}
+              {column.length === 0 && (
+                <p className="rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground">
+                  {canEdit ? "Drop a task here" : "No tasks"}
+                </p>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+/** Month grid starting Monday, with each task on its due date. */
+function TaskCalendar({ rows }: { rows: TaskItem[] }) {
+  const [month, setMonth] = useState(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
+  const today = toIso(new Date());
+  const byDate = useMemo(() => {
+    const map = new Map<string, TaskItem[]>();
+    for (const t of rows) if (t.dueDate) map.set(t.dueDate, [...(map.get(t.dueDate) ?? []), t]);
+    return map;
+  }, [rows]);
+  const undated = rows.filter((t) => !t.dueDate).length;
+
+  const lead = (month.getDay() + 6) % 7; // days shown before the 1st (week starts Monday)
+  const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+  const cells = Math.ceil((lead + daysInMonth) / 7) * 7;
+  const days = Array.from({ length: cells }, (_, i) => {
+    const d = new Date(month.getFullYear(), month.getMonth(), i - lead + 1);
+    return { iso: toIso(d), day: d.getDate(), inMonth: d.getMonth() === month.getMonth() };
+  });
+  const shift = (n: number) => setMonth((m) => new Date(m.getFullYear(), m.getMonth() + n, 1));
+
+  return (
+    <div className="overflow-hidden rounded-xl border bg-card">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b p-4">
+        <b>{month.toLocaleDateString("en-US", { month: "long", year: "numeric" })}</b>
+        <div className="flex items-center gap-2">
+          {undated > 0 && (
+            <small className="mr-2 text-muted-foreground">{undated} without a due date</small>
+          )}
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => shift(-1)}
+            aria-label="Previous month"
+          >
+            <ChevronLeft />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const d = new Date();
+              setMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+            }}
+          >
+            Today
+          </Button>
+          <Button variant="outline" size="icon" onClick={() => shift(1)} aria-label="Next month">
+            <ChevronRight />
+          </Button>
+        </div>
+      </div>
+      <div className="grid grid-cols-7">
+        {WEEKDAYS.map((d) => (
+          <div key={d} className="border-b p-2 text-xs font-medium text-muted-foreground">
+            {d}
+          </div>
+        ))}
+        {days.map((d) => {
+          const due = byDate.get(d.iso) ?? [];
+          return (
+            <div
+              key={d.iso}
+              className={cn(
+                "min-h-24 border-b border-r p-1.5 text-xs",
+                !d.inMonth && "bg-muted/40 text-muted-foreground",
+              )}
+            >
+              <span
+                className={cn(
+                  "inline-grid size-6 place-items-center rounded-full",
+                  d.iso === today && "bg-primary font-semibold text-primary-foreground",
+                )}
+              >
+                {d.day}
+              </span>
+              <div className="mt-1 space-y-1">
+                {due.slice(0, 3).map((t) => (
+                  <Link
+                    key={t.slug}
+                    to="/tasks/$taskSlug"
+                    params={{ taskSlug: t.slug }}
+                    title={t.title}
+                    className={cn(
+                      "block truncate rounded px-1.5 py-1 hover:ring-1 hover:ring-primary/40",
+                      t.status === "Done"
+                        ? "bg-muted text-muted-foreground line-through"
+                        : t.isOverdue
+                          ? "bg-danger-soft text-destructive"
+                          : "bg-accent text-accent-foreground",
+                    )}
+                  >
+                    {t.title}
+                  </Link>
+                ))}
+                {due.length > 3 && (
+                  <small className="block px-1.5 text-muted-foreground">
+                    +{due.length - 3} more
+                  </small>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function EmptyTasks({ canEdit }: { canEdit: boolean }) {
+  return (
+    <div className="rounded-2xl bg-card p-12 text-center shadow-card">
+      <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-primary-soft text-primary">
+        <ClipboardList className="size-6" />
+      </span>
+      <h2 className="mt-4 font-display text-lg font-semibold">No tasks yet</h2>
+      <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
+        Add a task, assign it to someone, and give it a due date to keep work moving.
+      </p>
+      {canEdit && (
+        <TaskFormDialog>
+          <Button className="mt-5">
+            <Plus /> New Task
+          </Button>
+        </TaskFormDialog>
+      )}
+    </div>
+  );
+}
+
+export function TaskDetail({ slug }: { slug: string }) {
+  const { taskList, tasksState, can, authStatus, saveTask } = useMiniOps();
+  const canEdit = can("tasks", "edit");
+  const task = taskList.find((t) => t.slug === slug);
+
+  if (authStatus === "signedOut") return <SignInPrompt what="tasks" />;
+  if (tasksState.error)
+    return <ErrorState what="tasks" message={tasksState.error} onRetry={tasksState.retry} />;
+  if (!tasksState.loading && !can("tasks")) return <NoAccess what="tasks" />;
+  if (tasksState.loading)
+    return (
+      <div aria-busy="true" aria-label="Loading task" className="space-y-6">
+        <Skeleton className="h-12 w-96 rounded-xl" />
+        <Skeleton className="h-48 rounded-2xl" />
+      </div>
+    );
+  if (!task)
+    return (
+      <div className="rounded-2xl bg-card p-12 text-center shadow-card">
+        <h1 className="font-display text-xl font-semibold">Task not found</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          It may have been deleted, or it belongs to another workspace.
+        </p>
+        <Button asChild variant="outline" className="mt-5">
+          <Link to="/tasks">Back to tasks</Link>
+        </Button>
+      </div>
+    );
+
+  async function changeStatus(status: string) {
+    if (!task || status === task.status) return;
+    try {
+      await saveTask({ ...toInput(task), status: status as TaskStatus }, task.slug);
+      toast.success(`Marked as ${status}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't update the task.");
+    }
+  }
+
+  return (
+    <>
+      <PageHeader
+        title={task.title}
+        description={task.projectName ? `Task in ${task.projectName}` : "Agency overhead task"}
+        action={(task.canEdit || task.canDelete) && <TaskActions task={task} />}
+      />
+      <div className="grid gap-8 lg:grid-cols-[2fr_1fr]">
+        <Section title="Description">
+          <p className="whitespace-pre-line text-sm leading-6 text-muted-foreground">
+            {task.description || "No description yet."}
+          </p>
+        </Section>
+        <Section title="Details">
+          <dl className="divide-y text-sm">
+            <Detail label="Status">
+              {task.canEdit ? (
+                <Select value={task.status} onValueChange={(v) => void changeStatus(v)}>
+                  <SelectTrigger className="h-8 w-36" aria-label="Change status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TASK_STATUSES.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Status>{task.status}</Status>
+              )}
+            </Detail>
+            <Detail label="Priority">
+              <Status>{task.priority}</Status>
+            </Detail>
+            <Detail label="Due date">
+              <DueDate task={task} />
+            </Detail>
+            <Detail label="Assigned to">{task.assigneeName || "Unassigned"}</Detail>
+            <Detail label="Project">
+              <ProjectLink task={task} />
+            </Detail>
+            {task.completedAt && (
+              <Detail label="Completed">
+                {formatDisplayDate(toIso(new Date(task.completedAt)))}
+              </Detail>
+            )}
+            <Detail label="Created">{formatDisplayDate(toIso(new Date(task.createdAt)))}</Detail>
+          </dl>
+        </Section>
+      </div>
+    </>
+  );
+}
+
+function Detail({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-4 py-2.5">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="text-right font-medium">{children}</dd>
+    </div>
+  );
+}
+
+function TaskActions({ task }: { task: TaskItem }) {
+  const { deleteTask } = useMiniOps();
+  const navigate = useNavigate();
+  const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function remove() {
+    setDeleting(true);
+    try {
+      await deleteTask(task.slug);
+      toast.success("Task deleted");
+      navigate({ to: "/tasks" });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't delete the task.");
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <>
+      {task.canEdit && (
+        <TaskFormDialog task={task}>
+          <Button variant="outline">
+            <Pencil /> Edit
+          </Button>
+        </TaskFormDialog>
+      )}
+      {task.canDelete && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" aria-label="More actions">
+              <MoreHorizontal />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onSelect={() => setConfirming(true)}
+            >
+              <Trash2 /> Delete task
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+      <AlertDialog open={confirming} onOpenChange={setConfirming}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete “{task.title}”?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the task. This can't be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              onClick={(e) => {
+                e.preventDefault();
+                void remove();
+              }}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              {deleting ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
+const toInput = (t?: TaskItem, defaults?: Partial<TaskInput>): TaskInput => ({
+  title: t?.title ?? "",
+  description: t?.description ?? "",
+  project: t ? (t.project ?? "") : (defaults?.project ?? ""),
+  assignee: t?.assignee ? String(t.assignee) : "",
+  priority: t?.priority ?? "Medium",
+  status: t?.status ?? "To Do",
+  dueDate: t?.dueDate ?? "",
+});
+
+/** Create (no `task`) or edit a task. `children` is the trigger; `project` presets the project slug. */
+export function TaskFormDialog({
+  task,
+  project,
+  children,
+}: {
+  task?: TaskItem;
+  project?: string;
+  children: ReactNode;
+}) {
+  const { saveTask, projects, members } = useMiniOps();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState<TaskInput>(() => toInput(task, { project: project ?? "" }));
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const set = <K extends keyof TaskInput>(key: K, value: TaskInput[K]) =>
+    setForm((f) => ({ ...f, [key]: value }));
+
+  function onOpenChange(next: boolean) {
+    if (next) {
+      setForm(toInput(task, { project: project ?? "" }));
+      setError("");
+    }
+    setOpen(next);
+  }
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    if (!form.title.trim()) {
+      setError("Enter a task title.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const saved = await saveTask(
+        { ...form, title: form.title.trim(), description: form.description.trim() },
+        task?.slug,
+      );
+      toast.success(task ? "Task updated" : "Task created");
+      setOpen(false);
+      if (!task && !project) navigate({ to: "/tasks/$taskSlug", params: { taskSlug: saved.slug } });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't save the task.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const field = (id: string, label: string, control: ReactNode, wide = false) => (
+    <div className={wide ? "sm:col-span-2" : undefined}>
+      <Label htmlFor={id}>{label}</Label>
+      <div className="mt-1.5">{control}</div>
+    </div>
+  );
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+        <form onSubmit={submit} noValidate>
+          <DialogHeader>
+            <DialogTitle>{task ? "Edit task" : "Add task"}</DialogTitle>
+            <DialogDescription>Saved to your workspace.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-x-4 gap-y-5 py-5 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <Label htmlFor="task-title">
+                Task title<span className="ml-0.5 text-destructive">*</span>
+              </Label>
+              <Input
+                id="task-title"
+                className="mt-1.5"
+                value={form.title}
+                onChange={(e) => {
+                  set("title", e.target.value);
+                  setError("");
+                }}
+                autoFocus
+              />
+              {error && (
+                <p role="alert" className="mt-1 text-xs text-destructive">
+                  {error}
+                </p>
+              )}
+            </div>
+            {field(
+              "task-project",
+              "Project",
+              <SearchableSelect
+                id="task-project"
+                clearable
+                placeholder="No project"
+                searchPlaceholder="Search projects…"
+                options={projects.map((p) => ({ value: p.id, label: p.name }))}
+                value={form.project}
+                onChange={(v) => set("project", v)}
+              />,
+            )}
+            {field(
+              "task-assignee",
+              "Assigned to",
+              <SearchableSelect
+                id="task-assignee"
+                clearable
+                placeholder="Unassigned"
+                searchPlaceholder="Search people…"
+                options={members.map((m) => ({ value: String(m.id), label: m.name, hint: m.role }))}
+                value={form.assignee}
+                onChange={(v) => set("assignee", v)}
+              />,
+            )}
+            {field(
+              "task-priority",
+              "Priority",
+              <SearchableSelect
+                id="task-priority"
+                options={[...TASK_PRIORITIES]}
+                value={form.priority}
+                onChange={(v) => set("priority", (v || "Medium") as TaskInput["priority"])}
+              />,
+            )}
+            {field(
+              "task-status",
+              "Status",
+              <SearchableSelect
+                id="task-status"
+                options={[...TASK_STATUSES]}
+                value={form.status}
+                onChange={(v) => set("status", (v || "To Do") as TaskInput["status"])}
+              />,
+            )}
+            {field(
+              "task-due",
+              "Due date",
+              <DateInput id="task-due" value={form.dueDate} onChange={(v) => set("dueDate", v)} />,
+            )}
+            {field(
+              "task-description",
+              "Description",
+              <Textarea
+                id="task-description"
+                rows={3}
+                value={form.description}
+                onChange={(e) => set("description", e.target.value)}
+                placeholder="Details, links or acceptance criteria"
+              />,
+              true,
+            )}
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? "Saving…" : task ? "Save changes" : "Create task"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

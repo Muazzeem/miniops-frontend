@@ -1,2 +1,0 @@
-import {createFileRoute} from '@tanstack/react-router';import {Projects} from '@/features/pages';
-export const Route=createFileRoute('/_workspace/projects')({head:()=>({meta:[{title:'Projects — MiniOps'},{name:'description',content:'Track project performance and profitability.'},{property:'og:title',content:'Projects — MiniOps'},{property:'og:description',content:'Track project performance and profitability.'},{property:'og:type',content:'website'},{name:'twitter:card',content:'summary_large_image'}]}),component:Projects});

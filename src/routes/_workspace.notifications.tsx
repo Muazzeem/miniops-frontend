@@ -1,2 +1,2 @@
-import {createFileRoute,redirect} from '@tanstack/react-router';
-export const Route=createFileRoute('/_workspace/notifications')({beforeLoad:()=>{throw redirect({to:'/app'})}});
+import {createFileRoute} from '@tanstack/react-router';import {NotificationsPage} from '@/features/notifications';
+export const Route=createFileRoute('/_workspace/notifications')({head:()=>({meta:[{title:'Notifications — MiniOps'},{name:'description',content:'Assignments, reviews, reminders and changes to your work.'},{property:'og:title',content:'Notifications — MiniOps'},{property:'og:description',content:'Assignments, reviews, reminders and changes to your work.'},{property:'og:type',content:'website'},{name:'twitter:card',content:'summary_large_image'}]}),component:NotificationsPage});
