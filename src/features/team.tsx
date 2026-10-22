@@ -57,19 +57,18 @@ import {
   type PermissionCatalogEntry,
   type PermissionMap,
   type WorkspaceRole,
+  WORKSPACE_ROLES,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { ErrorState, SignInPrompt } from "./projects";
 import { useMiniOps, type Invitation, type Member } from "./store";
 
 const ROLE_INFO: Record<WorkspaceRole, { label: string; summary: string }> = {
-  owner: { label: "Owner", summary: "Full access. Manages the team and workspace." },
-  admin: { label: "Admin", summary: "Full access. Invites people and manages permissions." },
-  manager: { label: "Manager", summary: "Runs projects, tasks and clients; sees financials." },
-  member: { label: "Member", summary: "Works on tasks and time; no financial figures." },
+  employer: { label: "Employer", summary: "Full access. Manages the team and workspace." },
+  employee: { label: "Employee", summary: "Works on tasks and time; access set per person." },
 };
 const LEVEL_LABEL: Record<AccessLevel, string> = { none: "No access", view: "View", edit: "Edit" };
-const FULL_ACCESS: WorkspaceRole[] = ["owner", "admin"];
+const FULL_ACCESS: WorkspaceRole[] = ["employer"];
 
 const toRole = (label: string) => label.toLowerCase() as WorkspaceRole;
 const fmtDate = (iso: string) => formatDisplayDate(toIso(new Date(iso)));
@@ -91,9 +90,7 @@ function defaultsFor(catalog: PermissionCatalogEntry[], role: WorkspaceRole): Pe
 
 /** Roles the signed-in user may hand out (mirrors the backend rules). */
 function assignableRoles(myRole: WorkspaceRole): WorkspaceRole[] {
-  if (myRole === "owner") return ["admin", "manager", "member"];
-  if (myRole === "admin") return ["manager", "member"];
-  return [];
+  return myRole === "employer" ? ["employer", "employee"] : [];
 }
 
 function Avatar({
@@ -172,7 +169,7 @@ export function Team() {
         <div className="mb-6 metric-grid">
           <Metric label="Team members" value={String(members.length)} />
           <Metric
-            label="Owners & admins"
+            label="Employers"
             value={String(members.filter((m) => FULL_ACCESS.includes(toRole(m.role))).length)}
           />
           <Metric label="Weekly capacity" value={`${capacity}h`} />
@@ -503,7 +500,7 @@ function InviteDialog({ children }: { children: ReactNode }) {
   const roles = assignableRoles(myRole);
   const [open, setOpen] = useState(false);
   const [emails, setEmails] = useState("");
-  const [role, setRole] = useState<WorkspaceRole>("member");
+  const [role, setRole] = useState<WorkspaceRole>("employee");
   const [permissions, setPermissions] = useState<PermissionMap | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -514,7 +511,7 @@ function InviteDialog({ children }: { children: ReactNode }) {
 
   function reset() {
     setEmails("");
-    setRole("member");
+    setRole("employee");
     setPermissions(null);
     setMessage("");
     setError("");
@@ -540,7 +537,7 @@ function InviteDialog({ children }: { children: ReactNode }) {
       try {
         const inv = await inviteMember({
           email,
-          role: role as Exclude<WorkspaceRole, "owner">,
+          role,
           ...(permissions ? { permissions } : {}),
           message: message.trim(),
         });
@@ -737,12 +734,8 @@ export function MemberDetail({ slug }: { slug: string }) {
     );
 
   const targetRole = toRole(member.role);
-  // Same rules as the backend: not yourself, never the owner, admins only by the owner.
-  const canManageThis =
-    canManageTeam &&
-    !member.isMe &&
-    targetRole !== "owner" &&
-    (targetRole !== "admin" || myRole === "owner");
+  // Same rule as the backend: employers manage everyone but themselves.
+  const canManageThis = canManageTeam && !member.isMe;
   const canSeeRate = can("financials") || member.isMe;
 
   return (
@@ -1049,9 +1042,7 @@ export function TeamSettingsSummary() {
   const sorted = useMemo(
     () =>
       [...members].sort(
-        (a, b) =>
-          (["owner", "admin", "manager", "member"] as const).indexOf(toRole(a.role)) -
-          (["owner", "admin", "manager", "member"] as const).indexOf(toRole(b.role)),
+        (a, b) => WORKSPACE_ROLES.indexOf(toRole(a.role)) - WORKSPACE_ROLES.indexOf(toRole(b.role)),
       ),
     [members],
   );

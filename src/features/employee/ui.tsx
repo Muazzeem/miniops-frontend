@@ -90,12 +90,11 @@ export function MiniOpsMark({
   labelClass?: string;
 }) {
   return (
-    <div className="flex items-center gap-2.5">
-      <span className="grid size-8 shrink-0 place-items-center rounded-[10px] bg-primary text-sm font-bold text-primary-foreground">
-        M
-      </span>
-      {!compact && (
-        <span className={cn("text-[15px] font-semibold text-foreground", labelClass)}>MiniOps</span>
+    <div className="flex items-center">
+      {compact ? (
+        <img src="/apple-touch-icon.png" alt="MiniOps" className="size-8 shrink-0 rounded-[10px]" />
+      ) : (
+        <img src="/miniops-logo.png" alt="MiniOps" className={cn("h-8 w-auto", labelClass)} />
       )}
     </div>
   );

@@ -13,6 +13,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   initialWorkspaces,
+  setMoneyCurrency,
   type Client,
   type Expense,
   type Project,
@@ -76,7 +77,17 @@ import {
 export type AuthStatus = "loading" | "signedIn" | "signedOut";
 type WorkspaceInput = { name: string; industry: string; currency: string; timezone: string };
 export type WorkspacePatch = Partial<
-  Pick<Workspace, "name" | "industry" | "timezone" | "workingDays">
+  Pick<
+    Workspace,
+    | "name"
+    | "industry"
+    | "currency"
+    | "timezone"
+    | "workingDays"
+    | "defaultHourlyRate"
+    | "weeklyHours"
+    | "targetMargin"
+  >
 >;
 /** Project form values: link an existing client by `clientSlug`, or create one from `newClient` (a name). */
 export type ProjectInput = {
@@ -374,6 +385,9 @@ const fromApiWorkspace = (w: ApiWorkspace): Workspace => ({
   currency: w.currency,
   timezone: w.timezone,
   workingDays: w.working_days,
+  defaultHourlyRate: w.default_hourly_rate,
+  weeklyHours: w.weekly_hours,
+  targetMargin: w.target_margin,
   role: roleLabel(w.role),
   data: emptyData(),
   permissions: w.permissions,
@@ -778,6 +792,8 @@ export function MiniOpsProvider({ children }: { children: ReactNode }) {
     [authStatus, live, liveWorkspaces, liveActiveId, workspaces, activeId],
   );
   if (!activeWorkspace) throw new Error("MiniOps workspace missing");
+  // Set during render so every amount below this provider uses the workspace's currency.
+  setMoneyCurrency(activeWorkspace.currency);
   const wid = activeWorkspace.id;
   const apiWid = live && wid !== "loading" ? Number(wid) : null;
   // Load data on demand: what the current page needs, plus anything a mounted component asks for (useNeeds).
@@ -827,7 +843,7 @@ export function MiniOpsProvider({ children }: { children: ReactNode }) {
     enabled: allowed.members,
     staleTime: LIST_STALE_MS,
   });
-  const canManageTeam = live && ["Owner", "Admin"].includes(activeWorkspace.role);
+  const canManageTeam = live && activeWorkspace.role === "Employer";
   const invitationsQuery = useQuery({
     queryKey: ["invitations", apiWid],
     queryFn: () => invitationsApi.list(apiWid!),
@@ -1214,8 +1230,7 @@ export function MiniOpsProvider({ children }: { children: ReactNode }) {
         },
       }
     : { loading: authStatus === "loading", error: null, retry: () => {} };
-  const canManageTime =
-    ["Owner", "Admin", "Manager"].includes(activeWorkspace.role) && can("time", "edit");
+  const canManageTime = activeWorkspace.role === "Employer" && can("time", "edit");
   async function saveTime(input: TimeEntryWrite, slug?: string) {
     if (apiWid === null) throw notSignedIn();
     const saved = await (slug
@@ -1339,7 +1354,7 @@ export function MiniOpsProvider({ children }: { children: ReactNode }) {
       currency: input.currency,
       timezone: input.timezone,
       workingDays: "mon_fri",
-      role: "Owner",
+      role: "Employer",
       data: emptyData(),
     };
     setWorkspaces((current) => [...current, workspace]);
@@ -1347,10 +1362,13 @@ export function MiniOpsProvider({ children }: { children: ReactNode }) {
   };
   const updateWorkspace = async (id: string, patch: WorkspacePatch) => {
     if (live) {
-      const { workingDays, ...rest } = patch;
+      const { workingDays, defaultHourlyRate, weeklyHours, targetMargin, ...rest } = patch;
       const saved = await workspacesApi.update(Number(id), {
         ...rest,
         ...(workingDays && { working_days: workingDays }),
+        ...(defaultHourlyRate !== undefined && { default_hourly_rate: defaultHourlyRate }),
+        ...(weeklyHours !== undefined && { weekly_hours: weeklyHours }),
+        ...(targetMargin !== undefined && { target_margin: targetMargin }),
       });
       queryClient.setQueryData<ApiWorkspace[]>(["workspaces", user?.id], (current) =>
         current?.map((w) => (w.id === saved.id ? { ...w, ...saved } : w)),
@@ -1383,7 +1401,8 @@ export function MiniOpsProvider({ children }: { children: ReactNode }) {
         workspaces: visibleWorkspaces,
         activeWorkspace,
         workspacesLoading: live && workspacesQuery.isPending,
-        employeeOnly: live && activeWorkspace.id !== "loading" && activeWorkspace.role === "Member",
+        employeeOnly:
+          live && activeWorkspace.id !== "loading" && activeWorkspace.role === "Employee",
         switchWorkspace,
         createWorkspace,
         deleteWorkspace,
@@ -1439,7 +1458,7 @@ export function MiniOpsProvider({ children }: { children: ReactNode }) {
         chatUnread: chatConversations.reduce((n, c) => n + c.unread, 0),
         chatState,
         canCreateGroups:
-          live && activeWorkspace.id !== "loading" && activeWorkspace.role !== "Member",
+          live && activeWorkspace.id !== "loading" && activeWorkspace.role !== "Employee",
         profile,
         updateProfile: (patch) => setProfile((p) => ({ ...p, ...patch })),
         authStatus,

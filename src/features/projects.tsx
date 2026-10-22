@@ -60,6 +60,7 @@ import {
 } from "@/components/ui/table";
 import { Metric, PageHeader, Status } from "@/components/miniops/core";
 import { Section } from "@/components/miniops/forms";
+import { ProjectFiles } from "./project-files";
 import { SearchableSelect } from "@/components/miniops/select-search";
 import {
   DateInput,
@@ -68,7 +69,7 @@ import {
   toIso,
   type IsoRange,
 } from "@/components/miniops/date-time";
-import { money, type Project } from "@/data/mock";
+import { cash, money, type Project } from "@/data/mock";
 import { PROJECT_STATUSES, PROJECT_TYPES } from "@/lib/api";
 import { LoginDialog } from "./login-dialog";
 import { TaskFormDialog, TaskTable } from "./tasks";
@@ -516,13 +517,14 @@ export function ProjectDetail({ slug }: { slug: string }) {
         )}
       </div>
       <Tabs defaultValue="overview">
-        <TabsList className="mb-6">
+        <TabsList className="mb-6 flex w-full overflow-x-auto [&>*]:flex-1">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="tasks">Tasks ({projectTasks.length})</TabsTrigger>
           {canSeeTime && <TabsTrigger value="time">Time ({fmtHours(projectHours)})</TabsTrigger>}
           {canSeeExpenses && (
             <TabsTrigger value="expenses">Expenses ({projectExpenses.length})</TabsTrigger>
           )}
+          <TabsTrigger value="files">Files</TabsTrigger>
           {showMoney && <TabsTrigger value="financials">Financials</TabsTrigger>}
         </TabsList>
         <TabsContent value="overview">
@@ -659,12 +661,7 @@ export function ProjectDetail({ slug }: { slug: string }) {
                       </span>
                       <span className="flex items-center gap-3">
                         <Status>{e.status}</Status>
-                        <b className="font-mono text-sm">
-                          {new Intl.NumberFormat("en-US", {
-                            style: "currency",
-                            currency: "USD",
-                          }).format(e.amount)}
-                        </b>
+                        <b className="font-mono text-sm">{cash(e.amount)}</b>
                       </span>
                     </div>
                   ))}
@@ -677,6 +674,9 @@ export function ProjectDetail({ slug }: { slug: string }) {
             </Section>
           </TabsContent>
         )}
+        <TabsContent value="files">
+          <ProjectFiles project={p.id} />
+        </TabsContent>
         <TabsContent value="financials">
           <div className="grid gap-8 lg:grid-cols-[2fr_1fr]">
             <Section title="Revenue, budget and cost">

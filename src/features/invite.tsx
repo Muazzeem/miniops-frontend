@@ -10,7 +10,7 @@ import { ApiError, inviteLinkApi, type PublicInvitation } from "@/lib/api";
 import { GoogleButton } from "./login-dialog";
 import { useMiniOps } from "./store";
 
-const ROLE_LABEL = { owner: "Owner", admin: "Admin", manager: "Manager", member: "Member" };
+const ROLE_LABEL = { employer: "Employer", employee: "Employee" };
 
 /** /invite/<token>: the link from the invitation email. */
 export function InvitePage({ token }: { token: string }) {
@@ -23,11 +23,8 @@ export function InvitePage({ token }: { token: string }) {
   return (
     <main className="min-h-screen bg-background px-4 py-10 sm:grid sm:place-items-center">
       <div className="w-full max-w-md">
-        <div className="mb-8 flex items-center justify-center gap-2.5">
-          <span className="grid size-9 place-items-center rounded-lg bg-primary font-bold text-primary-foreground">
-            M
-          </span>
-          <span className="text-lg font-semibold">MiniOps</span>
+        <div className="mb-8 flex items-center justify-center">
+          <img src="/miniops-logo.png" alt="MiniOps" className="h-9 w-auto" />
         </div>
         <section className="rounded-[20px] bg-card p-6 shadow-card sm:p-8">
           {query.isPending ? (

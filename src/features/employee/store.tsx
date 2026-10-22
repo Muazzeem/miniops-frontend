@@ -354,7 +354,7 @@ export function EmployeeProvider({ children }: { children: ReactNode }) {
     name: profile.name,
     displayName: first(profile.name),
     title: profile.title,
-    roleLabel: activeWorkspace.role || "Member",
+    roleLabel: activeWorkspace.role || "Employee",
     email: profile.email,
     workspace: activeWorkspace.name,
     initials: initialsOf(profile.name),

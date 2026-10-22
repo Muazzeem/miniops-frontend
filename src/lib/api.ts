@@ -185,7 +185,8 @@ const MAX_PAGE_SIZE = 100;
 
 /** Fetch every page of a list endpoint: first page, then the rest in parallel. */
 export async function listAll<T>(path: string): Promise<T[]> {
-  const pageUrl = (page: number) => `${path}?page_size=${MAX_PAGE_SIZE}&page=${page}`;
+  const sep = path.includes("?") ? "&" : "?";
+  const pageUrl = (page: number) => `${path}${sep}page_size=${MAX_PAGE_SIZE}&page=${page}`;
   const first = await api<Page<T>>(pageUrl(1));
   if (first.total_pages <= 1) return first.results;
   const rest = await Promise.all(
@@ -287,8 +288,8 @@ export const usersApi = {
     api<ApiUser>("/users/me/", { method: "PATCH", body: JSON.stringify({ avatar: null }) }),
 };
 
-export type WorkspaceRole = "owner" | "admin" | "manager" | "member";
-export const WORKSPACE_ROLES: WorkspaceRole[] = ["owner", "admin", "manager", "member"];
+export type WorkspaceRole = "employer" | "employee";
+export const WORKSPACE_ROLES: WorkspaceRole[] = ["employer", "employee"];
 
 /** Access levels per module, enforced by the backend (see miniops/workspaces/permissions.py). */
 export type AccessLevel = "none" | "view" | "edit";
@@ -310,6 +311,10 @@ export type ApiWorkspace = {
   currency: string;
   timezone: string;
   working_days: WorkingDays;
+  /** Left out unless the current user can see financials. */
+  default_hourly_rate?: number | null;
+  weekly_hours: number;
+  target_margin: number;
   role: WorkspaceRole;
   /** The current user's access in this workspace. */
   permissions: PermissionMap;
@@ -420,7 +425,19 @@ export const workspacesApi = {
     api<ApiWorkspace>("/workspaces/", json("POST", input)),
   update: (
     workspaceId: number,
-    input: Partial<Pick<ApiWorkspace, "name" | "industry" | "timezone" | "working_days">>,
+    input: Partial<
+      Pick<
+        ApiWorkspace,
+        | "name"
+        | "industry"
+        | "currency"
+        | "timezone"
+        | "working_days"
+        | "default_hourly_rate"
+        | "weekly_hours"
+        | "target_margin"
+      >
+    >,
   ) => api<ApiWorkspace>(`/workspaces/${workspaceId}/`, json("PATCH", input)),
   remove: (workspaceId: number) => api<void>(`/workspaces/${workspaceId}/`, { method: "DELETE" }),
 };
@@ -500,7 +517,7 @@ export type ApiInvitation = {
 
 export type InvitationCreate = {
   email: string;
-  role: Exclude<WorkspaceRole, "owner">;
+  role: WorkspaceRole;
   /** Changes from the role's defaults. */
   permissions?: Partial<PermissionMap>;
   message?: string;
@@ -745,7 +762,7 @@ export type ApiTimeEntry = {
 };
 
 export type TimeEntryWrite = {
-  /** Defaults to you; only owners, admins and managers may log for others. */
+  /** Defaults to you; only employers may log for others. */
   member?: number;
   project: string | null;
   task: string | null;
@@ -971,4 +988,129 @@ export const chatApi = {
   },
   deleteMessage: (workspaceId: number, id: number, messageId: number) =>
     api<void>(`${chatBase(workspaceId)}/${id}/messages/${messageId}/`, { method: "DELETE" }),
+};
+
+export type ApiProjectFolder = {
+  id: number;
+  name: string;
+  parent: number | null;
+  /** This folder and its ancestors, top-level first. */
+  path: { id: number; name: string }[];
+  created_by_name: string;
+  created_at: string;
+};
+
+export type ApiProjectFile = {
+  id: number;
+  name: string;
+  url: string;
+  folder: number | null;
+  size: number;
+  content_type: string;
+  uploaded_by_name: string;
+  created_at: string;
+};
+
+/** Bytes sent so far and the total, while a file uploads. */
+export type UploadProgress = { loaded: number; total: number };
+
+/** POST multipart form data with upload progress (fetch can't report it). */
+async function uploadForm<T>(
+  path: string,
+  form: FormData,
+  signal?: AbortSignal,
+  onProgress?: (p: UploadProgress) => void,
+): Promise<T> {
+  const send = (token: string | null) =>
+    new Promise<{ status: number; data: unknown }>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `${API_URL}${path}`);
+      xhr.setRequestHeader("Accept", "application/json");
+      if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+      xhr.upload.onprogress = (e) =>
+        onProgress?.({ loaded: e.loaded, total: e.lengthComputable ? e.total : 0 });
+      xhr.onload = () => {
+        let data: unknown;
+        try {
+          data = xhr.responseText ? JSON.parse(xhr.responseText) : undefined;
+        } catch {
+          data = undefined;
+        }
+        resolve({ status: xhr.status, data });
+      };
+      xhr.onerror = () =>
+        reject(new ApiError(0, "Can't reach the MiniOps server. Is the backend running?"));
+      xhr.onabort = () => reject(new DOMException("Upload cancelled", "AbortError"));
+      signal?.addEventListener("abort", () => xhr.abort(), { once: true });
+      xhr.send(form);
+    });
+
+  let res = await send(await getAccessToken());
+  if (res.status === 401 && tokenStore.get()) {
+    const fresh = await refreshAccess();
+    if (fresh) res = await send(fresh);
+    if (res.status === 401) tokenStore.clear();
+  }
+  if (res.status < 200 || res.status >= 300)
+    throw new ApiError(
+      res.status,
+      errorMessage(res.data, `Upload failed (${res.status})`),
+      res.data,
+    );
+  return res.data as T;
+}
+
+export const projectFilesApi = {
+  /** Folders and files directly inside `folder` (null = the project's top level). */
+  folders: (workspaceId: number, project: string, folder: number | null) =>
+    listAll<ApiProjectFolder>(
+      `/workspaces/${workspaceId}/projects/${project}/folders/${folder ? `?folder=${folder}` : ""}`,
+    ),
+  files: (workspaceId: number, project: string, folder: number | null) =>
+    listAll<ApiProjectFile>(
+      `/workspaces/${workspaceId}/projects/${project}/files/${folder ? `?folder=${folder}` : ""}`,
+    ),
+  folder: (workspaceId: number, project: string, id: number) =>
+    api<ApiProjectFolder>(`/workspaces/${workspaceId}/projects/${project}/folders/${id}/`),
+  createFolder: (workspaceId: number, project: string, name: string, parent: number | null) =>
+    api<ApiProjectFolder>(
+      `/workspaces/${workspaceId}/projects/${project}/folders/`,
+      json("POST", { name, parent }),
+    ),
+  renameFolder: (workspaceId: number, project: string, id: number, name: string) =>
+    api<ApiProjectFolder>(
+      `/workspaces/${workspaceId}/projects/${project}/folders/${id}/`,
+      json("PATCH", { name }),
+    ),
+  removeFolder: (workspaceId: number, project: string, id: number) =>
+    api<void>(`/workspaces/${workspaceId}/projects/${project}/folders/${id}/`, {
+      method: "DELETE",
+    }),
+  upload: (
+    workspaceId: number,
+    project: string,
+    file: File,
+    folder: number | null,
+    signal?: AbortSignal,
+    onProgress?: (p: UploadProgress) => void,
+  ) => {
+    const form = new FormData();
+    form.append("file", file);
+    if (folder) form.append("folder", String(folder));
+    return uploadForm<ApiProjectFile>(
+      `/workspaces/${workspaceId}/projects/${project}/files/`,
+      form,
+      signal,
+      onProgress,
+    );
+  },
+  renameFile: (workspaceId: number, project: string, id: number, name: string) =>
+    api<ApiProjectFile>(
+      `/workspaces/${workspaceId}/projects/${project}/files/${id}/`,
+      json("PATCH", { name }),
+    ),
+  removeFile: (workspaceId: number, project: string, id: number) =>
+    api<void>(`/workspaces/${workspaceId}/projects/${project}/files/${id}/`, {
+      method: "DELETE",
+    }),
 };

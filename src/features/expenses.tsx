@@ -75,7 +75,7 @@ import {
   toIso,
   type IsoRange,
 } from "@/components/miniops/date-time";
-import { money } from "@/data/mock";
+import { cash, money } from "@/data/mock";
 import {
   BILLING_CYCLES,
   EXPENSE_CATEGORIES,
@@ -93,9 +93,6 @@ const RECEIPT_TYPES = ".pdf,.jpg,.jpeg,.png,.webp";
 const MAX_RECEIPT_BYTES = 5 * 1024 * 1024;
 const CYCLE_SUFFIX = { Monthly: "mo", Quarterly: "qtr", Yearly: "yr" } as const;
 
-/** Exact amounts (with cents) for individual expenses; totals use the rounded `money`. */
-const cash = (v: number) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(v);
 const today = () => toIso(new Date());
 const daysUntil = (iso: string) =>
   Math.round((new Date(`${iso}T00:00`).getTime() - new Date(`${today()}T00:00`).getTime()) / 864e5);

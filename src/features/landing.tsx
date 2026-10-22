@@ -60,14 +60,8 @@ export function Landing() {
     <div className="landing bg-background">
       <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur-xl">
         <div className="mx-auto grid h-16 max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 lg:px-8">
-          <Link
-            to="/"
-            className="flex min-w-0 items-center gap-2.5 font-display text-base font-semibold"
-          >
-            <span className="grid size-8 shrink-0 place-items-center rounded-md bg-primary text-sm text-primary-foreground">
-              M
-            </span>
-            <span className="truncate">MiniOps</span>
+          <Link to="/" className="flex min-w-0 items-center">
+            <img src="/miniops-logo.png" alt="MiniOps" className="h-8 w-auto" />
           </Link>
           <div className="flex items-center gap-3 md:gap-7">
             <nav className="hidden items-center gap-7 text-sm text-muted-foreground md:flex">
