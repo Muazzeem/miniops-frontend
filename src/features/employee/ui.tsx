@@ -192,9 +192,8 @@ function WorkspaceSwitcher() {
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-medium">{activeWorkspace.name}</span>
-        <span className="block text-xs text-muted-foreground">
-          {activeWorkspace.role || "Workspace"}
-        </span>
+        {/* This is the employee view, so label the role by view rather than workspace membership. */}
+        <span className="block text-xs text-muted-foreground">Employee</span>
       </span>
       {live && workspaces.length > 1 && <ChevronDown className="size-4 text-muted-foreground" />}
     </span>
