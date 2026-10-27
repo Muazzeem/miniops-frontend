@@ -201,6 +201,9 @@ export type SubscriptionItem = {
   project: string | null;
   projectName: string;
   notes: string;
+  invoiceFileUrl: string | null;
+  invoiceName: string;
+  invoiceUrl: string;
   monthlyCost: number;
   annualCost: number;
   renewalCount: number;
@@ -308,6 +311,8 @@ type Store = WorkspaceData & {
   saveClient: (input: ClientInput, slug?: string) => Promise<ClientItem>;
   deleteClient: (slug: string) => Promise<void>;
   saveTask: (input: TaskInput, slug?: string) => Promise<TaskItem>;
+  /** Uploads an image for a task description and returns its URL. */
+  uploadTaskImage: (image: File) => Promise<string>;
   deleteTask: (slug: string) => Promise<void>;
   moveTask: (slug: string, status: TaskStatus) => Promise<void>;
   notificationList: AppNotification[];
@@ -414,6 +419,7 @@ const fromApiProject = (p: ApiProject): Project => ({
   startDate: p.start_date,
   endDate: p.end_date,
   createdAt: p.created_at,
+  updatedAt: p.updated_at,
   team: p.team,
 });
 const toApiProject = (i: ProjectInput): ProjectWrite => ({
@@ -551,6 +557,9 @@ const fromApiSubscription = (s: ApiSubscription): SubscriptionItem => ({
   project: s.project,
   projectName: s.project_name,
   notes: s.notes,
+  invoiceFileUrl: s.invoice_file_url,
+  invoiceName: s.invoice_name,
+  invoiceUrl: s.invoice_url,
   monthlyCost: Number(s.monthly_cost),
   annualCost: Number(s.annual_cost),
   renewalCount: s.renewal_count,
@@ -1307,6 +1316,10 @@ export function MiniOpsProvider({ children }: { children: ReactNode }) {
     void queryClient.invalidateQueries({ queryKey: ["tasks", apiWid] });
     return fromApiTask(saved);
   }
+  async function uploadTaskImage(image: File): Promise<string> {
+    if (apiWid === null) throw notSignedIn();
+    return (await tasksApi.uploadImage(apiWid, image)).url;
+  }
   async function deleteTask(slug: string) {
     if (apiWid === null) throw notSignedIn();
     await tasksApi.remove(apiWid, slug);
@@ -1439,6 +1452,7 @@ export function MiniOpsProvider({ children }: { children: ReactNode }) {
         tasksState,
         members,
         saveTask,
+        uploadTaskImage,
         deleteTask,
         moveTask,
         clientList,

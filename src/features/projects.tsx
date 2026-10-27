@@ -79,6 +79,11 @@ import { fmtHours } from "@/lib/hours";
 import { useMiniOps, type ProjectInput } from "./store";
 
 const SORTS = {
+  recent: {
+    label: "Recent activity",
+    fn: (a: Project, b: Project) =>
+      (b.updatedAt ?? b.createdAt ?? "").localeCompare(a.updatedAt ?? a.createdAt ?? ""),
+  },
   newest: {
     label: "Newest",
     fn: (a: Project, b: Project) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""),
@@ -123,7 +128,7 @@ export function Projects() {
   const [status, setStatus] = useState("all");
   const [client, setClient] = useState("");
   const [range, setRange] = useState<IsoRange>({ from: "", to: "" });
-  const [sort, setSort] = useState<SortKey>("newest");
+  const [sort, setSort] = useState<SortKey>("recent");
 
   const clientOptions = useMemo(
     () => [...new Set(projects.map((p) => p.client).filter(Boolean))].sort(),
@@ -252,7 +257,7 @@ export function Projects() {
             />
             <DateRangePicker value={range} onChange={setRange} />
             <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
-              <SelectTrigger className="w-40" aria-label="Sort">
+              <SelectTrigger className="w-52" aria-label="Sort">
                 <span className="text-muted-foreground">Sort:</span>
                 <SelectValue />
               </SelectTrigger>

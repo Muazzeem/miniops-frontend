@@ -4,6 +4,7 @@ import {
   AlertCircle,
   ArrowRight,
   Check,
+  ExternalLink,
   FileText,
   Paperclip,
   Pause,
@@ -67,6 +68,7 @@ import {
 } from "@/components/ui/table";
 import { Metric, PageHeader, Status } from "@/components/miniops/core";
 import { Section } from "@/components/miniops/forms";
+import { RichText, RichTextEditor } from "@/components/miniops/rich-text";
 import { SearchableSelect } from "@/components/miniops/select-search";
 import {
   DateInput,
@@ -91,7 +93,13 @@ import { useMiniOps, type ExpenseItem, type SubscriptionItem } from "./store";
 const OVERHEAD = "__overhead__";
 const RECEIPT_TYPES = ".pdf,.jpg,.jpeg,.png,.webp";
 const MAX_RECEIPT_BYTES = 5 * 1024 * 1024;
-const CYCLE_SUFFIX = { Monthly: "mo", Quarterly: "qtr", Yearly: "yr" } as const;
+const CYCLE_SUFFIX = {
+  Monthly: "/mo",
+  Quarterly: "/qtr",
+  Yearly: "/yr",
+  "One Time": " one time",
+} as const;
+const isOneTime = (s: { billingCycle: string }) => s.billingCycle === "One Time";
 
 const today = () => toIso(new Date());
 const daysUntil = (iso: string) =>
@@ -601,7 +609,6 @@ export function ExpenseFormDialog({
     Partial<Record<keyof ExpenseForm | "receipt", string | undefined>>
   >({});
   const [saving, setSaving] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
   const set = <K extends keyof ExpenseForm>(key: K, value: ExpenseForm[K]) => {
     setForm((f) => ({ ...f, [key]: value }));
     setErrors((e) => ({ ...e, [key]: undefined }));
@@ -646,19 +653,6 @@ export function ExpenseFormDialog({
       setSaving(false);
     }
   }
-
-  function pickReceipt(file?: File) {
-    if (!file) return;
-    if (file.size > MAX_RECEIPT_BYTES) {
-      setErrors((e) => ({ ...e, receipt: "Receipts must be 5 MB or smaller." }));
-      return;
-    }
-    setErrors((e) => ({ ...e, receipt: undefined }));
-    setReceipt(file);
-  }
-
-  const currentReceipt =
-    receipt instanceof File ? receipt.name : receipt === null ? "" : (expense?.receiptName ?? "");
 
   return (
     <Dialog
@@ -735,40 +729,17 @@ export function ExpenseFormDialog({
               />
             </Field>
             <Field label="Receipt" id="expense-receipt" error={errors.receipt}>
-              <input
-                ref={fileRef}
+              <AttachFile
                 id="expense-receipt"
-                type="file"
-                accept={RECEIPT_TYPES}
-                className="hidden"
-                onChange={(e) => {
-                  pickReceipt(e.target.files?.[0]);
-                  e.target.value = "";
+                label="receipt"
+                file={receipt}
+                currentName={expense?.receiptName ?? ""}
+                onChange={(file) => {
+                  setReceipt(file);
+                  setErrors((e) => ({ ...e, receipt: undefined }));
                 }}
+                onError={(msg) => setErrors((e) => ({ ...e, receipt: msg }))}
               />
-              {currentReceipt ? (
-                <div className="flex h-10 items-center gap-2 rounded-[10px] border px-3 text-sm">
-                  <Paperclip className="size-4 shrink-0 text-muted-foreground" />
-                  <span className="min-w-0 flex-1 truncate">{currentReceipt}</span>
-                  <button
-                    type="button"
-                    className="text-muted-foreground hover:text-destructive"
-                    aria-label="Remove receipt"
-                    onClick={() => setReceipt(null)}
-                  >
-                    <X className="size-4" />
-                  </button>
-                </div>
-              ) : (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => fileRef.current?.click()}
-                >
-                  <Paperclip /> Attach PDF or image
-                </Button>
-              )}
             </Field>
             <Field label="Notes" id="expense-notes" wide>
               <Textarea
@@ -806,8 +777,10 @@ function SubscriptionsTab({ canEdit }: { canEdit: boolean }) {
   const [selected, setSelected] = useState<string | null>(null);
   const active = subscriptionList.filter((s) => s.status === "Active");
   const monthly = active.reduce((s, x) => s + x.monthlyCost, 0);
-  const soon = active.filter((s) => daysUntil(s.nextRenewal) <= 30);
-  const next = [...active].sort((a, b) => a.nextRenewal.localeCompare(b.nextRenewal))[0];
+  // One-time purchases don't renew.
+  const renewing = active.filter((s) => !isOneTime(s));
+  const soon = renewing.filter((s) => daysUntil(s.nextRenewal) <= 30);
+  const next = [...renewing].sort((a, b) => a.nextRenewal.localeCompare(b.nextRenewal))[0];
   const current = subscriptionList.find((s) => s.slug === selected) ?? null;
 
   if (subscriptionList.length === 0)
@@ -854,15 +827,17 @@ function SubscriptionsTab({ canEdit }: { canEdit: boolean }) {
                   {s.status !== "Active" && <Status>{s.status}</Status>}
                 </span>
                 <small className="mt-1 block text-muted-foreground">
-                  {s.status === "Active"
-                    ? `Renews ${formatDisplayDate(s.nextRenewal)}`
-                    : `${s.status} · ${s.vendor || s.category}`}
+                  {s.status !== "Active"
+                    ? `${s.status} · ${s.vendor || s.category}`
+                    : isOneTime(s)
+                      ? `${daysUntil(s.nextRenewal) > 0 ? "Due" : "Paid"} ${formatDisplayDate(s.nextRenewal)}`
+                      : `Renews ${formatDisplayDate(s.nextRenewal)}`}
                 </small>
                 <span className="mt-5 flex items-center justify-between">
                   <strong className="font-mono text-lg">
                     {cash(s.amount)}
                     <small className="font-sans font-normal text-muted-foreground">
-                      /{CYCLE_SUFFIX[s.billingCycle]}
+                      {CYCLE_SUFFIX[s.billingCycle]}
                     </small>
                   </strong>
                   <ArrowRight className="size-4 text-muted-foreground" />
@@ -917,7 +892,14 @@ function SubscriptionSheet({
                 {[s.vendor, s.category].filter(Boolean).join(" · ")}
               </SheetDescription>
             </SheetHeader>
-            {s.status === "Active" ? (
+            {s.status === "Active" && isOneTime(s) ? (
+              <div className="mt-6 rounded-lg bg-muted p-4 text-sm">
+                <b>One-time purchase</b>{" "}
+                {daysUntil(s.nextRenewal) > 0
+                  ? `due ${formatDisplayDate(s.nextRenewal)}. It will be recorded as an expense on that date.`
+                  : `on ${formatDisplayDate(s.nextRenewal)}, recorded as an expense.`}
+              </div>
+            ) : s.status === "Active" ? (
               <div className="mt-6 flex items-center gap-3 rounded-lg bg-warning-soft p-4 text-warning">
                 <AlertCircle className="size-4 shrink-0" />
                 <b className="text-sm">
@@ -934,10 +916,45 @@ function SubscriptionSheet({
             <dl className="mt-6 divide-y border-y text-sm">
               {(
                 [
-                  ["Cost", `${cash(s.amount)} / ${s.billingCycle.toLowerCase()}`],
-                  ["Per month", cash(s.monthlyCost)],
-                  ["Per year", money(s.annualCost)],
+                  ...(isOneTime(s)
+                    ? [["Cost", `${cash(s.amount)} (one time)`]]
+                    : [
+                        ["Cost", `${cash(s.amount)} / ${s.billingCycle.toLowerCase()}`],
+                        ["Per month", cash(s.monthlyCost)],
+                        ["Per year", money(s.annualCost)],
+                      ]),
                   ["Payment method", s.paymentMethod || "—"],
+                  [
+                    "Invoice",
+                    s.invoiceFileUrl || s.invoiceUrl ? (
+                      <span key="i" className="flex flex-col gap-1">
+                        {s.invoiceFileUrl && (
+                          <a
+                            href={s.invoiceFileUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1.5 text-primary hover:underline"
+                          >
+                            <FileText className="size-4 shrink-0" />
+                            <span className="truncate">{s.invoiceName}</span>
+                          </a>
+                        )}
+                        {s.invoiceUrl && (
+                          <a
+                            href={s.invoiceUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1.5 text-primary hover:underline"
+                          >
+                            <ExternalLink className="size-4 shrink-0" />
+                            <span className="truncate">{s.invoiceUrl}</span>
+                          </a>
+                        )}
+                      </span>
+                    ) : (
+                      "—"
+                    ),
+                  ],
                   [
                     "Billed to",
                     s.project ? (
@@ -953,7 +970,7 @@ function SubscriptionSheet({
                     ),
                   ],
                   ["Status", <Status key="s">{s.status}</Status>],
-                  ["Notes", s.notes || "—"],
+                  ["Notes", <RichText key="n" html={s.notes} fallback="—" />],
                 ] as [string, ReactNode][]
               ).map(([label, value]) => (
                 <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-4 py-3" key={label}>
@@ -962,7 +979,9 @@ function SubscriptionSheet({
                 </div>
               ))}
             </dl>
-            <h3 className="mt-6 text-sm font-semibold">Recorded renewals ({s.renewalCount})</h3>
+            <h3 className="mt-6 text-sm font-semibold">
+              {isOneTime(s) ? "Recorded expense" : `Recorded renewals (${s.renewalCount})`}
+            </h3>
             {renewals.length ? (
               <ul className="mt-2 divide-y rounded-lg border text-sm">
                 {renewals.slice(0, 12).map((e) => (
@@ -1041,7 +1060,16 @@ const toSubscriptionWrite = (s?: SubscriptionItem): SubscriptionWrite => ({
   status: s?.status ?? "Active",
   project: s?.project ?? null,
   notes: s?.notes ?? "",
+  invoice_url: s?.invoiceUrl ?? "",
 });
+
+const looksLikeUrl = (v: string) => {
+  try {
+    return ["http:", "https:"].includes(new URL(v).protocol);
+  } catch {
+    return false;
+  }
+};
 
 // 12+ digits in a row looks like a full card number; the API rejects those too.
 const looksLikeCardNumber = (v: string) => /\d{12,}/.test(v.replace(/[\s-]/g, ""));
@@ -1056,10 +1084,13 @@ function SubscriptionFormDialog({
   const { saveSubscription, projects } = useMiniOps();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<SubscriptionWrite>(() => toSubscriptionWrite(subscription));
+  // undefined = keep the current invoice, null = remove it, File = replace it.
+  const [invoice, setInvoice] = useState<File | null | undefined>(undefined);
   const [errors, setErrors] = useState<
     Partial<Record<keyof SubscriptionWrite, string | undefined>>
   >({});
   const [saving, setSaving] = useState(false);
+  const oneTime = form.billing_cycle === "One Time";
   const set = <K extends keyof SubscriptionWrite>(key: K, value: SubscriptionWrite[K]) => {
     setForm((f) => ({ ...f, [key]: value }));
     setErrors((e) => ({ ...e, [key]: undefined }));
@@ -1072,7 +1103,10 @@ function SubscriptionFormDialog({
     const amount = Number(form.amount);
     if (form.amount === "" || !Number.isFinite(amount) || amount < 0)
       found.amount = "Enter an amount of 0 or more.";
-    if (!form.next_renewal) found.next_renewal = "Pick the next renewal date.";
+    if (!form.next_renewal)
+      found.next_renewal = oneTime ? "Pick the payment date." : "Pick the next renewal date.";
+    if (form.invoice_url.trim() && !looksLikeUrl(form.invoice_url.trim()))
+      found.invoice_url = "Enter a full link, starting with https://";
     if (looksLikeCardNumber(form.payment_method))
       found.payment_method = "Don't enter a full card number — use a label like “Visa •••• 4242”.";
     setErrors(found);
@@ -1080,13 +1114,20 @@ function SubscriptionFormDialog({
     setSaving(true);
     try {
       await saveSubscription(
-        { ...form, name: form.name.trim(), vendor: form.vendor.trim(), notes: form.notes.trim() },
+        {
+          ...form,
+          name: form.name.trim(),
+          vendor: form.vendor.trim(),
+          notes: form.notes.trim(),
+          invoice_url: form.invoice_url.trim(),
+          ...(invoice !== undefined ? { invoice } : {}),
+        },
         subscription?.slug,
       );
       const past = daysUntil(form.next_renewal) <= 0 && form.status === "Active";
       toast.success(
         `${subscription ? "Subscription updated" : `${form.name.trim()} added`}${
-          past ? " — the due renewal was recorded as an expense" : ""
+          past ? ` — the ${oneTime ? "purchase" : "due renewal"} was recorded as an expense` : ""
         }`,
       );
       setOpen(false);
@@ -1103,6 +1144,7 @@ function SubscriptionFormDialog({
       onOpenChange={(next) => {
         if (next) {
           setForm(toSubscriptionWrite(subscription));
+          setInvoice(undefined);
           setErrors({});
         }
         setOpen(next);
@@ -1134,7 +1176,12 @@ function SubscriptionFormDialog({
                 onChange={(e) => set("vendor", e.target.value)}
               />
             </Field>
-            <Field label="Amount per cycle" id="sub-amount" required error={errors.amount}>
+            <Field
+              label={oneTime ? "Amount" : "Amount per cycle"}
+              id="sub-amount"
+              required
+              error={errors.amount}
+            >
               <Input
                 id="sub-amount"
                 type="number"
@@ -1155,7 +1202,12 @@ function SubscriptionFormDialog({
                 }
               />
             </Field>
-            <Field label="Next renewal" id="sub-renewal" required error={errors.next_renewal}>
+            <Field
+              label={oneTime ? "Payment date" : "Next renewal"}
+              id="sub-renewal"
+              required
+              error={errors.next_renewal}
+            >
               <DateInput
                 id="sub-renewal"
                 value={form.next_renewal}
@@ -1200,12 +1252,35 @@ function SubscriptionFormDialog({
                 />
               </Field>
             )}
+            <Field label="Invoice" id="sub-invoice" error={errors.invoice}>
+              <AttachFile
+                id="sub-invoice"
+                label="invoice"
+                file={invoice}
+                currentName={subscription?.invoiceName ?? ""}
+                onChange={(file) => {
+                  setInvoice(file);
+                  setErrors((e) => ({ ...e, invoice: undefined }));
+                }}
+                onError={(msg) => setErrors((e) => ({ ...e, invoice: msg }))}
+              />
+            </Field>
+            <Field label="Invoice URL" id="sub-invoice-url" error={errors.invoice_url}>
+              <Input
+                id="sub-invoice-url"
+                type="url"
+                inputMode="url"
+                value={form.invoice_url}
+                onChange={(e) => set("invoice_url", e.target.value)}
+                placeholder="https://"
+              />
+            </Field>
             <Field label="Notes" id="sub-notes" wide>
-              <Textarea
+              <RichTextEditor
                 id="sub-notes"
-                rows={2}
                 value={form.notes}
-                onChange={(e) => set("notes", e.target.value)}
+                onChange={(html) => set("notes", html)}
+                placeholder="Plan details, seats, who owns it…"
               />
             </Field>
           </div>
@@ -1224,6 +1299,74 @@ function SubscriptionFormDialog({
 }
 
 /* ------------------------------------------------------------------ Shared */
+
+/** Pick one PDF or image (5 MB max). `file`: undefined = keep `currentName`, null = removed. */
+function AttachFile({
+  id,
+  label,
+  file,
+  currentName,
+  onChange,
+  onError,
+}: {
+  id: string;
+  label: string;
+  file: File | null | undefined;
+  currentName: string;
+  onChange: (file: File | null) => void;
+  onError: (message: string) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const name = file instanceof File ? file.name : file === null ? "" : currentName;
+
+  function pick(picked?: File) {
+    if (!picked) return;
+    if (picked.size > MAX_RECEIPT_BYTES) {
+      onError(`The ${label} must be 5 MB or smaller.`);
+      return;
+    }
+    onChange(picked);
+  }
+
+  return (
+    <>
+      <input
+        ref={inputRef}
+        id={id}
+        type="file"
+        accept={RECEIPT_TYPES}
+        className="hidden"
+        onChange={(e) => {
+          pick(e.target.files?.[0]);
+          e.target.value = "";
+        }}
+      />
+      {name ? (
+        <div className="flex h-10 items-center gap-2 rounded-[10px] border px-3 text-sm">
+          <Paperclip className="size-4 shrink-0 text-muted-foreground" />
+          <span className="min-w-0 flex-1 truncate">{name}</span>
+          <button
+            type="button"
+            className="text-muted-foreground hover:text-destructive"
+            aria-label={`Remove ${label}`}
+            onClick={() => onChange(null)}
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+      ) : (
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full justify-start"
+          onClick={() => inputRef.current?.click()}
+        >
+          <Paperclip /> Attach PDF or image
+        </Button>
+      )}
+    </>
+  );
+}
 
 function Field({
   label,

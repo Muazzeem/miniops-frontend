@@ -68,6 +68,7 @@ import { LoginDialog } from "@/features/login-dialog";
 import { TASK_PRIORITIES, TASK_STATUSES, type TaskPriority, type TaskStatus } from "@/lib/api";
 import { fmtHours, parseHours } from "@/lib/hours";
 import { cn } from "@/lib/utils";
+import { RichText, RichTextEditor } from "@/components/miniops/rich-text";
 import { DateInput } from "./date-time";
 import { todayIso, useEmployee, type Notification } from "./store";
 
@@ -724,7 +725,7 @@ export function StatusBadge({ status }: { status: string }) {
     ? "bg-success-muted text-success"
     : ["In Progress"].includes(status)
       ? "bg-primary-light text-primary-dark"
-      : ["On Hold", "Pending"].includes(status)
+      : ["In Review", "On Hold", "Pending"].includes(status)
         ? "bg-warning-muted text-warning"
         : ["Cancelled", "Overdue"].includes(status)
           ? "bg-danger-muted text-danger"
@@ -994,9 +995,11 @@ function TaskDrawer() {
           <div className="mt-7 space-y-6">
             <div>
               <p className="field-label">Description</p>
-              <p className="mt-2 whitespace-pre-line text-sm leading-6 text-foreground">
-                {task.description || "No description added."}
-              </p>
+              <RichText
+                html={task.description}
+                fallback="No description added."
+                className="mt-2 text-foreground"
+              />
             </div>
             <div className="grid grid-cols-2 gap-5 border-y border-border py-5">
               <Info label="Assigned to" value={task.assigneeName || "Unassigned"} />
@@ -1111,7 +1114,7 @@ function TaskForm() {
     projects: myProjects,
     me,
   } = useEmployee();
-  const { projects: allProjects } = useMiniOps();
+  const { projects: allProjects, uploadTaskImage } = useMiniOps();
   const editing = !!editingTask;
   // New tasks can go in any project you can see; your own projects come first.
   const projectOptions = useMemo(() => {
@@ -1198,10 +1201,11 @@ function TaskForm() {
             )}
           </Field>
           <Field label="Description">
-            <Textarea
-              rows={3}
+            <RichTextEditor
               value={draft.description}
-              onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+              onChange={(html) => setDraft((d) => ({ ...d, description: html }))}
+              placeholder="Details, links or acceptance criteria"
+              onUploadImage={uploadTaskImage}
             />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">

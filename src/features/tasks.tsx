@@ -1,4 +1,11 @@
-import { useMemo, useState, type DragEvent, type FormEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type DragEvent,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   CalendarDays,
@@ -17,7 +24,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
@@ -61,6 +67,7 @@ import {
 } from "@/components/ui/table";
 import { PageHeader, Status } from "@/components/miniops/core";
 import { Section } from "@/components/miniops/forms";
+import { RichText, RichTextEditor } from "@/components/miniops/rich-text";
 import { SearchableSelect } from "@/components/miniops/select-search";
 import {
   DateInput,
@@ -327,6 +334,7 @@ export function TaskTable({
           <TableHead>Priority</TableHead>
           <TableHead>Due date</TableHead>
           <TableHead>Status</TableHead>
+          <TableHead className="w-12 text-right">Action</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -351,6 +359,9 @@ export function TaskTable({
             </TableCell>
             <TableCell>
               <Status>{t.status}</Status>
+            </TableCell>
+            <TableCell className="text-right">
+              <TaskRowActions task={t} />
             </TableCell>
           </TableRow>
         ))}
@@ -378,7 +389,7 @@ function TaskBoard({ rows, canEdit }: { rows: TaskItem[]; canEdit: boolean }) {
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
       {TASK_STATUSES.map((status) => {
         const column = rows.filter((t) => t.status === status);
         return (
@@ -617,9 +628,11 @@ export function TaskDetail({ slug }: { slug: string }) {
       />
       <div className="grid gap-8 lg:grid-cols-[2fr_1fr]">
         <Section title="Description">
-          <p className="whitespace-pre-line text-sm leading-6 text-muted-foreground">
-            {task.description || "No description yet."}
-          </p>
+          <RichText
+            html={task.description}
+            fallback="No description yet."
+            className="text-muted-foreground"
+          />
         </Section>
         <Section title="Details">
           <dl className="divide-y text-sm">
@@ -674,22 +687,8 @@ function Detail({ label, children }: { label: string; children: ReactNode }) {
 }
 
 function TaskActions({ task }: { task: TaskItem }) {
-  const { deleteTask } = useMiniOps();
   const navigate = useNavigate();
   const [confirming, setConfirming] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-
-  async function remove() {
-    setDeleting(true);
-    try {
-      await deleteTask(task.slug);
-      toast.success("Task deleted");
-      navigate({ to: "/tasks" });
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Couldn't delete the task.");
-      setDeleting(false);
-    }
-  }
 
   return (
     <>
@@ -717,30 +716,109 @@ function TaskActions({ task }: { task: TaskItem }) {
           </DropdownMenuContent>
         </DropdownMenu>
       )}
-      <AlertDialog open={confirming} onOpenChange={setConfirming}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete “{task.title}”?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This permanently removes the task. This can't be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={deleting}
-              onClick={(e) => {
-                e.preventDefault();
-                void remove();
-              }}
-              className="bg-destructive text-white hover:bg-destructive/90"
-            >
-              {deleting ? "Deleting…" : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteTaskDialog
+        task={task}
+        open={confirming}
+        onOpenChange={setConfirming}
+        onDeleted={() => navigate({ to: "/tasks" })}
+      />
     </>
+  );
+}
+
+/** Three-dot menu on a task table row: edit or delete without opening the task. */
+function TaskRowActions({ task }: { task: TaskItem }) {
+  const [editing, setEditing] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  if (!task.canEdit && !task.canDelete) return null;
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8"
+            aria-label={`Actions for ${task.title}`}
+          >
+            <MoreHorizontal />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {task.canEdit && (
+            <DropdownMenuItem onSelect={() => setEditing(true)}>
+              <Pencil /> Edit task
+            </DropdownMenuItem>
+          )}
+          {task.canDelete && (
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onSelect={() => setConfirming(true)}
+            >
+              <Trash2 /> Delete task
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {task.canEdit && <TaskFormDialog task={task} open={editing} onOpenChange={setEditing} />}
+      <DeleteTaskDialog task={task} open={confirming} onOpenChange={setConfirming} />
+    </>
+  );
+}
+
+function DeleteTaskDialog({
+  task,
+  open,
+  onOpenChange,
+  onDeleted,
+}: {
+  task: TaskItem;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onDeleted?: () => void;
+}) {
+  const { deleteTask } = useMiniOps();
+  const [deleting, setDeleting] = useState(false);
+
+  async function remove() {
+    setDeleting(true);
+    try {
+      await deleteTask(task.slug);
+      toast.success("Task deleted");
+      onOpenChange(false);
+      onDeleted?.();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't delete the task.");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete “{task.title}”?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This permanently removes the task. This can't be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={deleting}
+            onClick={(e) => {
+              e.preventDefault();
+              void remove();
+            }}
+            className="bg-destructive text-white hover:bg-destructive/90"
+          >
+            {deleting ? "Deleting…" : "Delete"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 
@@ -754,32 +832,49 @@ const toInput = (t?: TaskItem, defaults?: Partial<TaskInput>): TaskInput => ({
   dueDate: t?.dueDate ?? "",
 });
 
-/** Create (no `task`) or edit a task. `children` is the trigger; `project` presets the project slug. */
+/**
+ * Create (no `task`) or edit a task. `children` is the trigger; `project` presets the project slug.
+ * Pass `open`/`onOpenChange` instead of `children` to open it from elsewhere (e.g. a menu item).
+ */
 export function TaskFormDialog({
   task,
   project,
   children,
+  open: openProp,
+  onOpenChange: onOpenChangeProp,
 }: {
   task?: TaskItem;
   project?: string;
-  children: ReactNode;
+  children?: ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const { saveTask, projects, members } = useMiniOps();
-  const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
+  const { saveTask, uploadTaskImage, projects, members } = useMiniOps();
+  const [innerOpen, setInnerOpen] = useState(false);
+  const controlled = openProp !== undefined;
+  const open = controlled ? openProp : innerOpen;
   const [form, setForm] = useState<TaskInput>(() => toInput(task, { project: project ?? "" }));
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const set = <K extends keyof TaskInput>(key: K, value: TaskInput[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
 
-  function onOpenChange(next: boolean) {
-    if (next) {
-      setForm(toInput(task, { project: project ?? "" }));
-      setError("");
-    }
-    setOpen(next);
+  function reset() {
+    setForm(toInput(task, { project: project ?? "" }));
+    setError("");
   }
+
+  function onOpenChange(next: boolean) {
+    if (next) reset();
+    if (controlled) onOpenChangeProp?.(next);
+    else setInnerOpen(next);
+  }
+
+  // A controlled dialog is opened by its parent, so onOpenChange(true) never fires.
+  useEffect(() => {
+    if (controlled && openProp) reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [controlled, openProp]);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -789,13 +884,12 @@ export function TaskFormDialog({
     }
     setSaving(true);
     try {
-      const saved = await saveTask(
+      await saveTask(
         { ...form, title: form.title.trim(), description: form.description.trim() },
         task?.slug,
       );
       toast.success(task ? "Task updated" : "Task created");
-      setOpen(false);
-      if (!task && !project) navigate({ to: "/tasks/$taskSlug", params: { taskSlug: saved.slug } });
+      onOpenChange(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't save the task.");
     } finally {
@@ -812,7 +906,7 @@ export function TaskFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <form onSubmit={submit} noValidate>
           <DialogHeader>
@@ -894,18 +988,18 @@ export function TaskFormDialog({
             {field(
               "task-description",
               "Description",
-              <Textarea
+              <RichTextEditor
                 id="task-description"
-                rows={3}
                 value={form.description}
-                onChange={(e) => set("description", e.target.value)}
+                onChange={(html) => set("description", html)}
                 placeholder="Details, links or acceptance criteria"
+                onUploadImage={uploadTaskImage}
               />,
               true,
             )}
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button type="submit" disabled={saving}>

@@ -561,7 +561,7 @@ export const permissionsApi = {
   catalog: () => api<PermissionCatalogEntry[]>("/permissions/"),
 };
 
-export const TASK_STATUSES = ["To Do", "In Progress", "Done"] as const;
+export const TASK_STATUSES = ["To Do", "In Progress", "In Review", "Done"] as const;
 export const TASK_PRIORITIES = ["Low", "Medium", "High", "Urgent"] as const;
 export type TaskStatus = (typeof TASK_STATUSES)[number];
 export type TaskPriority = (typeof TASK_PRIORITIES)[number];
@@ -589,6 +589,8 @@ export type ApiTask = {
   updated_at: string;
 };
 
+export type ApiTaskImage = { id: number; url: string; created_at: string };
+
 /** Writable task fields; `project` is a project slug, `assignee` a member's user ID. */
 export type TaskWrite = Partial<
   Pick<
@@ -605,6 +607,12 @@ export const tasksApi = {
     api<ApiTask>(`/workspaces/${workspaceId}/tasks/${slug}/`, json("PATCH", input)),
   remove: (workspaceId: number, slug: string) =>
     api<void>(`/workspaces/${workspaceId}/tasks/${slug}/`, { method: "DELETE" }),
+  /** An image for a task description (PNG, JPEG, GIF or WebP, up to 10 MB). */
+  uploadImage(workspaceId: number, image: File) {
+    const body = new FormData();
+    body.append("image", image);
+    return api<ApiTaskImage>(`/workspaces/${workspaceId}/tasks/images/`, { method: "POST", body });
+  },
 };
 
 export const EXPENSE_CATEGORIES = [
@@ -620,7 +628,7 @@ export const EXPENSE_CATEGORIES = [
 export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
 export const EXPENSE_STATUSES = ["Pending", "Approved", "Rejected"] as const;
 export type ExpenseStatus = (typeof EXPENSE_STATUSES)[number];
-export const BILLING_CYCLES = ["Monthly", "Quarterly", "Yearly"] as const;
+export const BILLING_CYCLES = ["Monthly", "Quarterly", "Yearly", "One Time"] as const;
 export type BillingCycle = (typeof BILLING_CYCLES)[number];
 export const SUBSCRIPTION_STATUSES = ["Active", "Paused", "Cancelled"] as const;
 export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
@@ -665,17 +673,27 @@ export type ExpenseWrite = {
   receipt?: File | null;
 };
 
-/** JSON normally; multipart when a receipt file is attached. */
-function expenseBody(method: string, input: ExpenseWrite): RequestInit {
-  const { receipt, ...fields } = input;
-  if (!(receipt instanceof File)) {
-    return json(method, receipt === null ? { ...fields, receipt: null } : fields);
+/**
+ * JSON normally; multipart when `file` is a new upload. `file` null removes the
+ * current one, undefined keeps it.
+ */
+function bodyWithFile(
+  method: string,
+  fields: Record<string, string | null>,
+  key: string,
+  file: File | null | undefined,
+): RequestInit {
+  if (!(file instanceof File)) {
+    return json(method, file === null ? { ...fields, [key]: null } : fields);
   }
   const body = new FormData();
-  for (const [key, value] of Object.entries(fields)) body.append(key, value ?? "");
-  body.append("receipt", receipt);
+  for (const [name, value] of Object.entries(fields)) body.append(name, value ?? "");
+  body.append(key, file);
   return { method, body };
 }
+
+const expenseBody = (method: string, { receipt, ...fields }: ExpenseWrite) =>
+  bodyWithFile(method, fields, "receipt", receipt);
 
 export const expensesApi = {
   list: (workspaceId: number) => listAll<ApiExpense>(`/workspaces/${workspaceId}/expenses/`),
@@ -707,6 +725,12 @@ export type ApiSubscription = {
   project: string | null;
   project_name: string;
   notes: string;
+  /** The uploaded invoice file, if any. */
+  invoice_file_url: string | null;
+  invoice_name: string;
+  /** A link to the invoice in the vendor's billing portal. */
+  invoice_url: string;
+  /** 0 for a one-time purchase. */
   monthly_cost: number;
   annual_cost: number;
   renewal_count: number;
@@ -724,15 +748,30 @@ export type SubscriptionWrite = Pick<
   | "status"
   | "project"
   | "notes"
-> & { amount: string };
+  | "invoice_url"
+> & {
+  /** Per billing cycle; the full price for a one-time purchase. */
+  amount: string;
+  /** A new invoice file to upload, null to remove the current one, undefined to keep it. */
+  invoice?: File | null;
+};
+
+const subscriptionBody = (method: string, { invoice, ...fields }: Partial<SubscriptionWrite>) =>
+  bodyWithFile(method, fields as Record<string, string | null>, "invoice", invoice);
 
 export const subscriptionsApi = {
   list: (workspaceId: number) =>
     listAll<ApiSubscription>(`/workspaces/${workspaceId}/subscriptions/`),
   create: (workspaceId: number, input: SubscriptionWrite) =>
-    api<ApiSubscription>(`/workspaces/${workspaceId}/subscriptions/`, json("POST", input)),
+    api<ApiSubscription>(
+      `/workspaces/${workspaceId}/subscriptions/`,
+      subscriptionBody("POST", input),
+    ),
   update: (workspaceId: number, slug: string, input: Partial<SubscriptionWrite>) =>
-    api<ApiSubscription>(`/workspaces/${workspaceId}/subscriptions/${slug}/`, json("PATCH", input)),
+    api<ApiSubscription>(
+      `/workspaces/${workspaceId}/subscriptions/${slug}/`,
+      subscriptionBody("PATCH", input),
+    ),
   remove: (workspaceId: number, slug: string) =>
     api<void>(`/workspaces/${workspaceId}/subscriptions/${slug}/`, { method: "DELETE" }),
 };
@@ -789,6 +828,7 @@ export type ActivityVerb =
   | "task.completed"
   | "task.reopened"
   | "task.started"
+  | "task.in_review"
   | "time.logged"
   | "project.created"
   | "project.status"
