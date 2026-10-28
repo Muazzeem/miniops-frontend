@@ -11,7 +11,7 @@
   --radius-xl: 18px;
   --font-sans: "Geist", ui-sans-serif, sans-serif;
   --font-display: "Geist", ui-sans-serif, sans-serif;
-  --font-mono: "Geist Mono", ui-monospace, monospace;
+  --font-mono: "Geist", ui-sans-serif, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -125,6 +125,7 @@
   html { scroll-behavior: smooth; }
   body { margin: 0; background: var(--background); color: var(--foreground); font-family: var(--font-sans); letter-spacing: 0; -webkit-font-smoothing: antialiased; }
   h1, h2, h3 { font-family: var(--font-display); letter-spacing: 0; }
+  .font-mono { font-variant-numeric: tabular-nums; }
   button, a, input, textarea, [role=button] { outline-color: var(--ring); }
   button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid color-mix(in oklab, var(--ring) 55%, transparent); outline-offset: 2px; }
   ::selection { background: var(--primary-soft); color: var(--foreground); }
