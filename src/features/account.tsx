@@ -339,7 +339,7 @@ export function SettingsPage({ section: initial }: { section?: string | undefine
         description={`Configure how ${activeWorkspace.name} works in MiniOps.`}
       />
       <div className="grid gap-6 md:grid-cols-[210px_minmax(0,1fr)]">
-        <nav className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 md:flex-col">
+        <nav className="flex flex-wrap gap-1 md:flex-col md:flex-nowrap">
           {sections.map((x) => (
             <button
               key={x}

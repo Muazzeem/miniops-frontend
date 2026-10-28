@@ -588,7 +588,7 @@ export function SummaryCard({
         <span className={cn("grid size-10 shrink-0 place-items-center rounded-xl", toneClass)}>
           {icon ?? <Icon className="size-[18px]" />}
         </span>
-        <p className="min-w-0 flex-1 truncate text-[13px] font-medium text-muted-foreground">
+        <p className="min-w-0 flex-1 text-[13px] font-medium leading-snug text-muted-foreground max-sm:line-clamp-2 sm:truncate">
           {label}
         </p>
         {spark && (

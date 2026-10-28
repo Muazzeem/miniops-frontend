@@ -145,7 +145,7 @@ export function AdminPage() {
         description="Manage workspace access, organizations, plans, and subscriptions."
       />
       <Tabs defaultValue="users">
-        <TabsList className="mb-6 max-w-full overflow-x-auto">
+        <TabsList className="mb-6 h-auto max-w-full flex-wrap justify-start">
           <TabsTrigger value="users">
             <Users /> Users
           </TabsTrigger>
