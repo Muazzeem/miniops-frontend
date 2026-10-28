@@ -58,7 +58,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Metric, PageHeader, Status } from "@/components/miniops/core";
+import { Metric, MobileCard, MobileField, PageHeader, Status } from "@/components/miniops/core";
 import { Section } from "@/components/miniops/forms";
 import { ProjectFiles } from "./project-files";
 import { SearchableSelect } from "@/components/miniops/select-search";
@@ -294,6 +294,58 @@ export function Projects() {
 }
 
 function ProjectsTable({ rows, showMoney }: { rows: Project[]; showMoney: boolean }) {
+  return (
+    <>
+      <div className="desktop-table">
+        <ProjectsDesktopTable rows={rows} showMoney={showMoney} />
+      </div>
+      <div className="mobile-list space-y-3">
+        {rows.map((project) => (
+          <MobileCard key={project.id}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <Link
+                  to="/projects/$projectSlug"
+                  params={{ projectSlug: project.id }}
+                  className="block truncate font-medium hover:text-primary"
+                >
+                  {project.name}
+                </Link>
+                <p className="truncate text-xs text-muted-foreground">
+                  {project.client || "No client"}
+                </p>
+              </div>
+              <Status>{project.status}</Status>
+            </div>
+            <dl className="mt-4 grid grid-cols-2 gap-3">
+              {showMoney && (
+                <>
+                  <MobileField label="Revenue">{money(project.revenue)}</MobileField>
+                  <MobileField label="Profit">{money(project.profit)}</MobileField>
+                  <MobileField label="Budget">{money(project.budget)}</MobileField>
+                  <MobileField label="Margin">{project.margin}%</MobileField>
+                </>
+              )}
+              <MobileField label="Due">
+                {project.endDate ? formatDisplayDate(project.endDate) : "Not set"}
+              </MobileField>
+              {showMoney && (
+                <MobileField label="Health">
+                  <Status>{project.health}</Status>
+                </MobileField>
+              )}
+            </dl>
+            <div className="mt-4">
+              <ProgressBar value={project.progress} />
+            </div>
+          </MobileCard>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function ProjectsDesktopTable({ rows, showMoney }: { rows: Project[]; showMoney: boolean }) {
   return (
     <Table>
       <TableHeader>

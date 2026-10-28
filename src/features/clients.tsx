@@ -57,7 +57,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Metric, PageHeader, Status } from "@/components/miniops/core";
+import { Metric, MobileCard, MobileField, PageHeader, Status } from "@/components/miniops/core";
 import { Section } from "@/components/miniops/forms";
 import { SearchableSelect } from "@/components/miniops/select-search";
 import { formatDisplayDate, toIso } from "@/components/miniops/date-time";
@@ -276,6 +276,54 @@ export function Clients() {
 }
 
 function ClientsTable({ rows, showMoney }: { rows: ClientItem[]; showMoney: boolean }) {
+  return (
+    <>
+      <div className="desktop-table">
+        <ClientsDesktopTable rows={rows} showMoney={showMoney} />
+      </div>
+      <div className="mobile-list space-y-3">
+        {rows.map((client) => (
+          <MobileCard key={client.slug}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <Link
+                  to="/clients/$clientSlug"
+                  params={{ clientSlug: client.slug }}
+                  className="block truncate font-medium hover:text-primary"
+                >
+                  {client.name}
+                </Link>
+                <p className="truncate text-xs text-muted-foreground">
+                  {client.industry || "No industry"}
+                </p>
+              </div>
+              <Status>{client.status}</Status>
+            </div>
+            <dl className="mt-4 grid grid-cols-2 gap-3">
+              <MobileField label="Active projects">
+                {client.activeProjects} / {client.projectCount}
+              </MobileField>
+              {showMoney && (
+                <>
+                  <MobileField label="Revenue">{money(client.revenue)}</MobileField>
+                  <MobileField label="Profit">{money(client.profit)}</MobileField>
+                  <MobileField label="Margin">
+                    {client.revenue ? `${client.margin}%` : "-"}
+                  </MobileField>
+                  <MobileField label="Health">
+                    <Status>{client.health}</Status>
+                  </MobileField>
+                </>
+              )}
+            </dl>
+          </MobileCard>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function ClientsDesktopTable({ rows, showMoney }: { rows: ClientItem[]; showMoney: boolean }) {
   return (
     <Table>
       <TableHeader>

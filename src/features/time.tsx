@@ -43,7 +43,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Metric, PageHeader } from "@/components/miniops/core";
+import { Metric, MobileCard, MobileField, PageHeader } from "@/components/miniops/core";
 import { Section } from "@/components/miniops/forms";
 import { SearchableSelect } from "@/components/miniops/select-search";
 import {
@@ -294,96 +294,151 @@ export function EntriesTable({
   const cols = 4 + (showProject ? 1 : 0) + (showMoney ? 1 : 0);
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Person</TableHead>
-          {showProject && <TableHead>Project / task</TableHead>}
-          <TableHead>Description</TableHead>
-          <TableHead className="text-right">Hours</TableHead>
-          <TableHead>Billable</TableHead>
-          {showMoney && <TableHead className="text-right">Cost</TableHead>}
-          <TableHead className="w-20">
-            <span className="sr-only">Actions</span>
-          </TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {days.map(([date, entries]) => (
-          <Fragment key={date}>
-            <TableRow className="bg-muted/50 hover:bg-muted/50">
-              <TableCell colSpan={cols - 1} className="py-2 text-xs font-semibold">
-                {formatDisplayDate(date)}
-              </TableCell>
-              <TableCell className="num py-2 text-xs font-semibold">
-                {fmtHours(sumHours(entries))}
-              </TableCell>
-              <TableCell colSpan={1 + (showMoney ? 1 : 0)} />
+    <>
+      <div className="desktop-table">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Person</TableHead>
+              {showProject && <TableHead>Project / task</TableHead>}
+              <TableHead>Description</TableHead>
+              <TableHead className="text-right">Hours</TableHead>
+              <TableHead>Billable</TableHead>
+              {showMoney && <TableHead className="text-right">Cost</TableHead>}
+              <TableHead className="w-20">
+                <span className="sr-only">Actions</span>
+              </TableHead>
             </TableRow>
-            {entries.map((e) => (
-              <TableRow key={e.slug}>
-                <TableCell className="whitespace-nowrap">
-                  {e.memberSlug ? (
-                    <Link
-                      to="/team/$memberSlug"
-                      params={{ memberSlug: e.memberSlug }}
-                      className="hover:text-primary"
-                    >
-                      {e.memberName}
-                    </Link>
-                  ) : (
-                    e.memberName
-                  )}
-                </TableCell>
-                {showProject && (
-                  <TableCell>
-                    {e.project ? (
-                      <Link
-                        to="/projects/$projectSlug"
-                        params={{ projectSlug: e.project }}
-                        className="hover:text-primary"
-                      >
-                        {e.projectName}
-                      </Link>
-                    ) : (
-                      <span className="text-muted-foreground">Agency overhead</span>
-                    )}
-                    {e.taskTitle && (
-                      <small className="block text-xs text-muted-foreground">{e.taskTitle}</small>
-                    )}
+          </TableHeader>
+          <TableBody>
+            {days.map(([date, entries]) => (
+              <Fragment key={date}>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableCell colSpan={cols - 1} className="py-2 text-xs font-semibold">
+                    {formatDisplayDate(date)}
                   </TableCell>
-                )}
-                <TableCell className="max-w-xs">
-                  <span className="line-clamp-2">{e.description || "—"}</span>
-                  {e.startTime && (
-                    <small className="block text-xs text-muted-foreground">
-                      from {formatTime(e.startTime.slice(0, 5))}
-                    </small>
-                  )}
-                </TableCell>
-                <TableCell className="num">{fmtHours(e.hours)}</TableCell>
-                <TableCell>
-                  <span
-                    className={cn(
-                      "rounded-full px-2 py-0.5 text-xs",
-                      e.billable
-                        ? "bg-positive-soft text-positive"
-                        : "bg-muted text-muted-foreground",
+                  <TableCell className="num py-2 text-xs font-semibold">
+                    {fmtHours(sumHours(entries))}
+                  </TableCell>
+                  <TableCell colSpan={1 + (showMoney ? 1 : 0)} />
+                </TableRow>
+                {entries.map((e) => (
+                  <TableRow key={e.slug}>
+                    <TableCell className="whitespace-nowrap">
+                      {e.memberSlug ? (
+                        <Link
+                          to="/team/$memberSlug"
+                          params={{ memberSlug: e.memberSlug }}
+                          className="hover:text-primary"
+                        >
+                          {e.memberName}
+                        </Link>
+                      ) : (
+                        e.memberName
+                      )}
+                    </TableCell>
+                    {showProject && (
+                      <TableCell>
+                        {e.project ? (
+                          <Link
+                            to="/projects/$projectSlug"
+                            params={{ projectSlug: e.project }}
+                            className="hover:text-primary"
+                          >
+                            {e.projectName}
+                          </Link>
+                        ) : (
+                          <span className="text-muted-foreground">Agency overhead</span>
+                        )}
+                        {e.taskTitle && (
+                          <small className="block text-xs text-muted-foreground">
+                            {e.taskTitle}
+                          </small>
+                        )}
+                      </TableCell>
                     )}
-                  >
-                    {e.billable ? "Billable" : "Non-billable"}
-                  </span>
-                </TableCell>
-                {showMoney && (
-                  <TableCell className="num">{e.cost != null ? money(e.cost) : "—"}</TableCell>
-                )}
-                <TableCell>{e.canEdit && <EntryActions entry={e} />}</TableCell>
-              </TableRow>
+                    <TableCell className="max-w-xs">
+                      <span className="line-clamp-2">{e.description || "—"}</span>
+                      {e.startTime && (
+                        <small className="block text-xs text-muted-foreground">
+                          from {formatTime(e.startTime.slice(0, 5))}
+                        </small>
+                      )}
+                    </TableCell>
+                    <TableCell className="num">{fmtHours(e.hours)}</TableCell>
+                    <TableCell>
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-xs",
+                          e.billable
+                            ? "bg-positive-soft text-positive"
+                            : "bg-muted text-muted-foreground",
+                        )}
+                      >
+                        {e.billable ? "Billable" : "Non-billable"}
+                      </span>
+                    </TableCell>
+                    {showMoney && (
+                      <TableCell className="num">{e.cost != null ? money(e.cost) : "—"}</TableCell>
+                    )}
+                    <TableCell>{e.canEdit && <EntryActions entry={e} />}</TableCell>
+                  </TableRow>
+                ))}
+              </Fragment>
             ))}
-          </Fragment>
+          </TableBody>
+        </Table>
+      </div>
+      <div className="mobile-list space-y-5">
+        {days.map(([date, entries]) => (
+          <div key={date}>
+            <div className="mb-2 flex justify-between px-1 text-xs font-semibold">
+              <span>{formatDisplayDate(date)}</span>
+              <span>{fmtHours(sumHours(entries))}</span>
+            </div>
+            <div className="space-y-3">
+              {entries.map((entry) => (
+                <MobileCard key={entry.slug}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{entry.memberName}</p>
+                      {showProject && (
+                        <p className="truncate text-xs text-muted-foreground">
+                          {entry.projectName || "Agency overhead"}
+                          {entry.taskTitle && ` · ${entry.taskTitle}`}
+                        </p>
+                      )}
+                    </div>
+                    {entry.canEdit && <EntryActions entry={entry} />}
+                  </div>
+                  {entry.description && (
+                    <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+                      {entry.description}
+                    </p>
+                  )}
+                  <dl className="mt-3 grid grid-cols-2 gap-3">
+                    <MobileField label="Hours">{fmtHours(entry.hours)}</MobileField>
+                    <MobileField label="Type">
+                      {entry.billable ? "Billable" : "Non-billable"}
+                    </MobileField>
+                    {showMoney && (
+                      <MobileField label="Cost">
+                        {entry.cost != null ? money(entry.cost) : "-"}
+                      </MobileField>
+                    )}
+                    {entry.startTime && (
+                      <MobileField label="Started">
+                        {formatTime(entry.startTime.slice(0, 5))}
+                      </MobileField>
+                    )}
+                  </dl>
+                </MobileCard>
+              ))}
+            </div>
+          </div>
         ))}
-      </TableBody>
-    </Table>
+      </div>
+    </>
   );
 }
 
@@ -400,42 +455,67 @@ function PeopleSummary({ rows, showMoney }: { rows: TimeItem[]; showMoney: boole
 
   return (
     <Section title="Hours by person" subtitle="For the entries matching the filters above.">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Person</TableHead>
-            <TableHead className="text-right">Total</TableHead>
-            <TableHead className="text-right">Billable</TableHead>
-            <TableHead className="text-right">Non-billable</TableHead>
-            <TableHead>Billable share</TableHead>
-            {showMoney && <TableHead className="text-right">Cost</TableHead>}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {people.map((p) => {
-            const total = sumHours(p.entries);
-            const bill = sumHours(p.entries.filter((e) => e.billable));
-            const share = total ? Math.round((bill / total) * 100) : 0;
-            return (
-              <TableRow key={p.slug || p.name}>
-                <TableCell className="font-medium">{p.name}</TableCell>
-                <TableCell className="num">{fmtHours(total)}</TableCell>
-                <TableCell className="num">{fmtHours(bill)}</TableCell>
-                <TableCell className="num">{fmtHours(total - bill)}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <div className="h-1.5 w-24 bg-muted">
-                      <div className="h-full bg-primary" style={{ width: `${share}%` }} />
+      <div className="desktop-table">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Person</TableHead>
+              <TableHead className="text-right">Total</TableHead>
+              <TableHead className="text-right">Billable</TableHead>
+              <TableHead className="text-right">Non-billable</TableHead>
+              <TableHead>Billable share</TableHead>
+              {showMoney && <TableHead className="text-right">Cost</TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {people.map((p) => {
+              const total = sumHours(p.entries);
+              const bill = sumHours(p.entries.filter((e) => e.billable));
+              const share = total ? Math.round((bill / total) * 100) : 0;
+              return (
+                <TableRow key={p.slug || p.name}>
+                  <TableCell className="font-medium">{p.name}</TableCell>
+                  <TableCell className="num">{fmtHours(total)}</TableCell>
+                  <TableCell className="num">{fmtHours(bill)}</TableCell>
+                  <TableCell className="num">{fmtHours(total - bill)}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <div className="h-1.5 w-24 bg-muted">
+                        <div className="h-full bg-primary" style={{ width: `${share}%` }} />
+                      </div>
+                      <small>{share}%</small>
                     </div>
-                    <small>{share}%</small>
-                  </div>
-                </TableCell>
-                {showMoney && <TableCell className="num">{money(sumCost(p.entries))}</TableCell>}
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+                  </TableCell>
+                  {showMoney && <TableCell className="num">{money(sumCost(p.entries))}</TableCell>}
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+      <div className="mobile-list space-y-3">
+        {people.map((person) => {
+          const total = sumHours(person.entries);
+          const billable = sumHours(person.entries.filter((entry) => entry.billable));
+          const share = total ? Math.round((billable / total) * 100) : 0;
+          return (
+            <MobileCard key={person.slug || person.name}>
+              <div className="flex items-center justify-between gap-3">
+                <p className="min-w-0 truncate font-medium">{person.name}</p>
+                <span className="num font-semibold">{fmtHours(total)}</span>
+              </div>
+              <dl className="mt-3 grid grid-cols-2 gap-3">
+                <MobileField label="Billable">{fmtHours(billable)}</MobileField>
+                <MobileField label="Non-billable">{fmtHours(total - billable)}</MobileField>
+                {showMoney && (
+                  <MobileField label="Cost">{money(sumCost(person.entries))}</MobileField>
+                )}
+                <MobileField label="Billable share">{share}%</MobileField>
+              </dl>
+            </MobileCard>
+          );
+        })}
+      </div>
     </Section>
   );
 }
