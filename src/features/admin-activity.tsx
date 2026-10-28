@@ -1,26 +1,257 @@
-import {useState,type FormEvent} from 'react';
-import {Activity as ActivityIcon,Building2,CircleDollarSign,Clock3,CreditCard,Mail,ShieldCheck,Users} from 'lucide-react';
-import {toast} from 'sonner';
-import {Button} from '@/components/ui/button';
-import {Input} from '@/components/ui/input';
-import {Select,SelectContent,SelectItem,SelectTrigger,SelectValue} from '@/components/ui/select';
-import {Tabs,TabsContent,TabsList,TabsTrigger} from '@/components/ui/tabs';
-import {Table,TableBody,TableCell,TableHead,TableHeader,TableRow} from '@/components/ui/table';
-import {PageHeader,Status} from '@/components/miniops/core';
+import { useState, type FormEvent } from "react";
+import {
+  Activity as ActivityIcon,
+  Building2,
+  CircleDollarSign,
+  Clock3,
+  CreditCard,
+  Mail,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { PageHeader, Status } from "@/components/miniops/core";
 
-const activity=[
-  ['Budget warning triggered','Atlas Client Portal reached 92% of its budget.','18 minutes ago',CircleDollarSign,'text-warning'],
-  ['Time entry added','Jordan Lee logged 4.5 hours to Acme Website Redesign.','1 hour ago',Clock3,'text-primary'],
-  ['Task completed','Maya Chen completed Homepage design concepts.','3 hours ago',ActivityIcon,'text-positive'],
-  ['Expense added','Adobe Creative Cloud · $120 agency overhead.','Yesterday',CreditCard,'text-destructive'],
-  ['Team invitation sent','An invitation was sent to Taylor Reed.','Yesterday',Mail,'text-primary'],
-  ['Project updated','Bloom Brand Identity progress moved to 72%.','2 days ago',Building2,'text-muted-foreground'],
+const activity = [
+  [
+    "Budget warning triggered",
+    "Atlas Client Portal reached 92% of its budget.",
+    "18 minutes ago",
+    CircleDollarSign,
+    "text-warning",
+  ],
+  [
+    "Time entry added",
+    "Jordan Lee logged 4.5 hours to Acme Website Redesign.",
+    "1 hour ago",
+    Clock3,
+    "text-primary",
+  ],
+  [
+    "Task completed",
+    "Maya Chen completed Homepage design concepts.",
+    "3 hours ago",
+    ActivityIcon,
+    "text-positive",
+  ],
+  [
+    "Expense added",
+    "Adobe Creative Cloud · $120 agency overhead.",
+    "Yesterday",
+    CreditCard,
+    "text-destructive",
+  ],
+  [
+    "Team invitation sent",
+    "An invitation was sent to Taylor Reed.",
+    "Yesterday",
+    Mail,
+    "text-primary",
+  ],
+  [
+    "Project updated",
+    "Bloom Brand Identity progress moved to 72%.",
+    "2 days ago",
+    Building2,
+    "text-muted-foreground",
+  ],
 ] as const;
 
-export function ActivityPage(){const [filter,setFilter]=useState('all');const rows=filter==='all'?activity:activity.filter(item=>item[0].toLowerCase().includes(filter));return <><PageHeader title="Activity" description="Recent financial and operational changes across Northstar Digital."/><div className="toolbar"><Select value={filter} onValueChange={setFilter}><SelectTrigger className="w-44"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">All activity</SelectItem><SelectItem value="budget">Budget changes</SelectItem><SelectItem value="time">Time entries</SelectItem><SelectItem value="expense">Expenses</SelectItem><SelectItem value="invitation">Invitations</SelectItem></SelectContent></Select></div><div className="max-w-4xl divide-y border-y">{rows.map(([title,detail,time,Icon,tone])=><div className="grid grid-cols-[auto_minmax(0,1fr)] gap-4 py-5 sm:grid-cols-[auto_minmax(0,1fr)_auto]" key={title}><span className="grid size-9 place-items-center rounded-md bg-secondary"><Icon className={`size-4 ${tone}`}/></span><span className="min-w-0"><b className="block text-sm">{title}</b><p className="mt-1 text-sm text-muted-foreground">{detail}</p></span><small className="col-start-2 text-muted-foreground sm:col-start-auto">{time}</small></div>)}</div></>}
+export function ActivityPage() {
+  const [filter, setFilter] = useState("all");
+  const rows =
+    filter === "all" ? activity : activity.filter((item) => item[0].toLowerCase().includes(filter));
+  return (
+    <>
+      <PageHeader
+        title="Activity"
+        description="Recent financial and operational changes across Northstar Digital."
+      />
+      <div className="toolbar">
+        <Select value={filter} onValueChange={setFilter}>
+          <SelectTrigger className="w-44">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All activity</SelectItem>
+            <SelectItem value="budget">Budget changes</SelectItem>
+            <SelectItem value="time">Time entries</SelectItem>
+            <SelectItem value="expense">Expenses</SelectItem>
+            <SelectItem value="invitation">Invitations</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="max-w-4xl divide-y border-y">
+        {rows.map(([title, detail, time, Icon, tone]) => (
+          <div
+            className="grid grid-cols-[auto_minmax(0,1fr)] gap-4 py-5 sm:grid-cols-[auto_minmax(0,1fr)_auto]"
+            key={title}
+          >
+            <span className="grid size-9 place-items-center rounded-md bg-secondary">
+              <Icon className={`size-4 ${tone}`} />
+            </span>
+            <span className="min-w-0">
+              <b className="block text-sm">{title}</b>
+              <p className="mt-1 text-sm text-muted-foreground">{detail}</p>
+            </span>
+            <small className="col-start-2 text-muted-foreground sm:col-start-auto">{time}</small>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
 
-type AdminUser={name:string;email:string;role:string;status:string};
+type AdminUser = { name: string; email: string; role: string; status: string };
 
-export function AdminPage(){const [email,setEmail]=useState('');const [role,setRole]=useState('Employee');const [users,setUsers]=useState<AdminUser[]>([{name:'Alex Morgan',email:'alex@northstardigital.co',role:'Employer',status:'Active'},{name:'Maya Chen',email:'maya@northstardigital.co',role:'Employer',status:'Active'},{name:'Jordan Lee',email:'jordan@northstardigital.co',role:'Employee',status:'Active'}]);function invite(e:FormEvent){e.preventDefault();if(!email.trim())return;const name=email.split('@')[0]?.replace(/[._-]/g,' ')||'Invited member';setUsers(current=>[...current,{name,email,role,status:'Pending'}]);toast.success(`Invitation sent to ${email}`);setEmail('')}return <><PageHeader title="Admin" description="Manage workspace access, organizations, plans, and subscriptions."/><Tabs defaultValue="users"><TabsList className="mb-6 max-w-full overflow-x-auto"><TabsTrigger value="users"><Users/> Users</TabsTrigger><TabsTrigger value="organizations"><Building2/> Organizations</TabsTrigger><TabsTrigger value="plans"><ShieldCheck/> Plans</TabsTrigger><TabsTrigger value="subscriptions"><CreditCard/> Subscriptions</TabsTrigger></TabsList><TabsContent value="users"><form onSubmit={invite} className="mb-6 grid gap-3 rounded-md border bg-card p-4 sm:grid-cols-[minmax(0,1fr)_150px_auto] sm:items-end"><label className="text-sm"><span className="font-medium">Invite by email</span><div className="relative mt-1.5"><Mail className="absolute left-3 top-2.5 size-4 text-muted-foreground"/><Input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="teammate@agency.com" className="pl-9"/></div></label><label className="text-sm"><span className="font-medium">Role</span><Select value={role} onValueChange={setRole}><SelectTrigger className="mt-1.5 w-full"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="Employee">Employee</SelectItem><SelectItem value="Employer">Employer</SelectItem></SelectContent></Select></label><Button type="submit">Send invite</Button></form><AdminTable headers={['Name','Email','Role','Status']} rows={users.map(user=>[user.name,user.email,user.role,user.status])}/></TabsContent><TabsContent value="organizations"><AdminTable headers={['Organization','Employer','Members','Plan','Status']} rows={[["Northstar Digital","Alex Morgan","9","Growth","Active"]]}/></TabsContent><TabsContent value="plans"><AdminTable headers={['Plan','Price','Team limit','Workspaces','Status']} rows={[["Starter","$19/month","3","1","Available"],["Growth","$39/month","10","1","Current"],["Agency","$79/month","25","3","Available"]]}/></TabsContent><TabsContent value="subscriptions"><AdminTable headers={['Organization','Plan','Billing cycle','Next renewal','Status']} rows={[["Northstar Digital","Growth","Monthly","Oct 23, 2026","Active"]]}/><div className="insight mt-5">Billing controls are placeholders in this frontend demo. No payment changes will be made.</div></TabsContent></Tabs></>}
+export function AdminPage() {
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("Employee");
+  const [users, setUsers] = useState<AdminUser[]>([
+    { name: "Alex Morgan", email: "alex@northstardigital.co", role: "Employer", status: "Active" },
+    { name: "Maya Chen", email: "maya@northstardigital.co", role: "Employer", status: "Active" },
+    { name: "Jordan Lee", email: "jordan@northstardigital.co", role: "Employee", status: "Active" },
+  ]);
+  function invite(e: FormEvent) {
+    e.preventDefault();
+    if (!email.trim()) return;
+    const name = email.split("@")[0]?.replace(/[._-]/g, " ") || "Invited member";
+    setUsers((current) => [...current, { name, email, role, status: "Pending" }]);
+    toast.success(`Invitation sent to ${email}`);
+    setEmail("");
+  }
+  return (
+    <>
+      <PageHeader
+        title="Admin"
+        description="Manage workspace access, organizations, plans, and subscriptions."
+      />
+      <Tabs defaultValue="users">
+        <TabsList className="mb-6 max-w-full overflow-x-auto">
+          <TabsTrigger value="users">
+            <Users /> Users
+          </TabsTrigger>
+          <TabsTrigger value="organizations">
+            <Building2 /> Organizations
+          </TabsTrigger>
+          <TabsTrigger value="plans">
+            <ShieldCheck /> Plans
+          </TabsTrigger>
+          <TabsTrigger value="subscriptions">
+            <CreditCard /> Subscriptions
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="users">
+          <form
+            onSubmit={invite}
+            className="mb-6 grid gap-3 rounded-md border bg-card p-4 sm:grid-cols-[minmax(0,1fr)_150px_auto] sm:items-end"
+          >
+            <label className="text-sm">
+              <span className="font-medium">Invite by email</span>
+              <div className="relative mt-1.5">
+                <Mail className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
+                <Input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="teammate@agency.com"
+                  className="pl-9"
+                />
+              </div>
+            </label>
+            <label className="text-sm">
+              <span className="font-medium">Role</span>
+              <Select value={role} onValueChange={setRole}>
+                <SelectTrigger className="mt-1.5 w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Employee">Employee</SelectItem>
+                  <SelectItem value="Employer">Employer</SelectItem>
+                </SelectContent>
+              </Select>
+            </label>
+            <Button type="submit">Send invite</Button>
+          </form>
+          <AdminTable
+            headers={["Name", "Email", "Role", "Status"]}
+            rows={users.map((user) => [user.name, user.email, user.role, user.status])}
+          />
+        </TabsContent>
+        <TabsContent value="organizations">
+          <AdminTable
+            headers={["Organization", "Employer", "Members", "Plan", "Status"]}
+            rows={[["Northstar Digital", "Alex Morgan", "9", "Growth", "Active"]]}
+          />
+        </TabsContent>
+        <TabsContent value="plans">
+          <AdminTable
+            headers={["Plan", "Price", "Team limit", "Workspaces", "Status"]}
+            rows={[
+              ["Starter", "$19/month", "3", "1", "Available"],
+              ["Growth", "$39/month", "10", "1", "Current"],
+              ["Agency", "$79/month", "25", "3", "Available"],
+            ]}
+          />
+        </TabsContent>
+        <TabsContent value="subscriptions">
+          <AdminTable
+            headers={["Organization", "Plan", "Billing cycle", "Next renewal", "Status"]}
+            rows={[["Northstar Digital", "Growth", "Monthly", "Oct 23, 2026", "Active"]]}
+          />
+          <div className="insight mt-5">
+            Billing controls are placeholders in this frontend demo. No payment changes will be
+            made.
+          </div>
+        </TabsContent>
+      </Tabs>
+    </>
+  );
+}
 
-function AdminTable({headers,rows}:{headers:string[];rows:string[][]}){return <Table><TableHeader><TableRow>{headers.map(header=><TableHead key={header}>{header}</TableHead>)}</TableRow></TableHeader><TableBody>{rows.map((row,index)=><TableRow key={`${row[0]}-${index}`}>{row.map((cell,cellIndex)=><TableCell key={`${cell}-${cellIndex}`} className={cellIndex===0?'font-medium capitalize':''}>{headers[cellIndex]==='Status'?<Status>{cell}</Status>:cell}</TableCell>)}</TableRow>)}</TableBody></Table>}
+function AdminTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          {headers.map((header) => (
+            <TableHead key={header}>{header}</TableHead>
+          ))}
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {rows.map((row, index) => (
+          <TableRow key={`${row[0]}-${index}`}>
+            {row.map((cell, cellIndex) => (
+              <TableCell
+                key={`${cell}-${cellIndex}`}
+                className={cellIndex === 0 ? "font-medium capitalize" : ""}
+              >
+                {headers[cellIndex] === "Status" ? <Status>{cell}</Status> : cell}
+              </TableCell>
+            ))}
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}
