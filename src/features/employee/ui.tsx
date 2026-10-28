@@ -64,6 +64,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useMiniOps, type TaskInput } from "@/features/store";
+import { TagList } from "@/components/miniops/tag-input";
 import { LoginDialog } from "@/features/login-dialog";
 import { TASK_PRIORITIES, TASK_STATUSES, type TaskPriority, type TaskStatus } from "@/lib/api";
 import { fmtHours, parseHours } from "@/lib/hours";
@@ -991,6 +992,10 @@ function TaskDrawer() {
                 "No project"
               )}
             </SheetDescription>
+            {task.parent && (
+              <p className="mt-2 text-xs text-muted-foreground">Sub-task of “{task.parentTitle}”</p>
+            )}
+            <TagList tags={task.tags} className="mt-3" />
           </SheetHeader>
           <div className="mt-7 space-y-6">
             <div>
@@ -1125,7 +1130,8 @@ function TaskForm() {
     title: "",
     description: "",
     project: "",
-    assignee: "",
+    assignees: [],
+    tags: [],
     priority: "Medium",
     status: "To Do",
     dueDate: "",
@@ -1141,7 +1147,8 @@ function TaskForm() {
             title: editingTask.title,
             description: editingTask.description,
             project: editingTask.project ?? "",
-            assignee: editingTask.assignee ? String(editingTask.assignee) : "",
+            assignees: editingTask.assignee ? [String(editingTask.assignee)] : [],
+            tags: editingTask.tags,
             priority: editingTask.priority,
             status: editingTask.status,
             dueDate: editingTask.dueDate ?? "",
@@ -1150,7 +1157,8 @@ function TaskForm() {
             title: "",
             description: "",
             project: myProjects[0]?.id ?? "",
-            assignee: String(me.userId),
+            assignees: [String(me.userId)],
+            tags: [],
             priority: "Medium",
             status: "To Do",
             dueDate: "",
@@ -1181,7 +1189,11 @@ function TaskForm() {
         <DialogHeader>
           <DialogTitle>{editing ? "Edit task" : "New task"}</DialogTitle>
           <DialogDescription>
-            {editing ? "Update the task’s details." : "Add a task for yourself."}
+            {editingTask?.parent
+              ? `A sub-task of “${editingTask.parentTitle}”.`
+              : editing
+                ? "Update the task’s details."
+                : "Add a task for yourself."}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4">

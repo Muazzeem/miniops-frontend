@@ -58,6 +58,7 @@ import {
   type PermissionMap,
   type WorkspaceRole,
   WORKSPACE_ROLES,
+  ROLE_LABELS,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { ErrorState, SignInPrompt } from "./projects";
@@ -65,12 +66,17 @@ import { useMiniOps, type Invitation, type Member } from "./store";
 
 const ROLE_INFO: Record<WorkspaceRole, { label: string; summary: string }> = {
   employer: { label: "Employer", summary: "Full access. Manages the team and workspace." },
+  project_manager: {
+    label: "Project Manager",
+    summary: "Runs projects and every task in the projects they manage.",
+  },
   employee: { label: "Employee", summary: "Works on tasks and time; access set per person." },
 };
 const LEVEL_LABEL: Record<AccessLevel, string> = { none: "No access", view: "View", edit: "Edit" };
 const FULL_ACCESS: WorkspaceRole[] = ["employer"];
 
-const toRole = (label: string) => label.toLowerCase() as WorkspaceRole;
+const toRole = (label: string) =>
+  WORKSPACE_ROLES.find((r) => ROLE_LABELS[r] === label) ?? (label.toLowerCase() as WorkspaceRole);
 const fmtDate = (iso: string) => formatDisplayDate(toIso(new Date(iso)));
 
 function useCatalog() {
@@ -90,7 +96,7 @@ function defaultsFor(catalog: PermissionCatalogEntry[], role: WorkspaceRole): Pe
 
 /** Roles the signed-in user may hand out (mirrors the backend rules). */
 function assignableRoles(myRole: WorkspaceRole): WorkspaceRole[] {
-  return myRole === "employer" ? ["employer", "employee"] : [];
+  return myRole === "employer" ? WORKSPACE_ROLES : [];
 }
 
 function Avatar({

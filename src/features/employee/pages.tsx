@@ -52,6 +52,7 @@ import { PROJECT_STATUSES, TASK_PRIORITIES, TASK_STATUSES, type TaskStatus } fro
 import { fmtHours } from "@/lib/hours";
 import { cn } from "@/lib/utils";
 import { todayIso, useEmployee, type Activity, type MyProject } from "./store";
+import { TagList } from "@/components/miniops/tag-input";
 import {
   Avatar,
   ConfirmDialog,
@@ -1080,6 +1081,7 @@ function TaskTable({
                   >
                     {t.title}
                   </button>
+                  <TagList tags={t.tags} className="mt-1" />
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   {t.projectName || "No project"}
@@ -1122,6 +1124,7 @@ function TaskTable({
               <PriorityBadge priority={t.priority} />
             </div>
             <p className="mt-1 text-xs text-muted-foreground">{t.projectName || "No project"}</p>
+            <TagList tags={t.tags} className="mt-2" />
             <div className="mt-3 flex items-center justify-between">
               <span className={cn("text-xs text-muted-foreground", isOverdue(t) && "text-danger")}>
                 {t.dueDate ? formatDue(t.dueDate) : "No due date"}
@@ -1200,6 +1203,7 @@ function TaskBoard({
                   <p className="mt-1 text-xs text-muted-foreground">
                     {t.projectName || "No project"}
                   </p>
+                  <TagList tags={t.tags} className="mt-2" />
                 </button>
               ))}
           </div>

@@ -61,6 +61,8 @@ import {
   type ApiTask,
   type ApiUser,
   type ApiWorkspace,
+  ROLE_LABELS,
+  type WorkspaceRole,
   type ClientWrite,
   type InvitationCreate,
   type MemberUpdate,
@@ -103,6 +105,8 @@ export type ProjectInput = {
   progress: number;
   startDate: string;
   endDate: string;
+  /** Managers' user IDs. */
+  managers: string[];
 };
 export type LoadState = { loading: boolean; error: string | null; retry: () => void };
 /** A task from the API. `project` is the project's slug; `assignee` a member's user ID. */
@@ -114,6 +118,11 @@ export type TaskItem = {
   projectName: string;
   assignee: number | null;
   assigneeName: string;
+  tags: string[];
+  /** Slug of the task this is a sub-task of. */
+  parent: string | null;
+  parentTitle: string;
+  subtasks: Subtask[];
   priority: TaskPriority;
   status: TaskStatus;
   dueDate: string | null;
@@ -125,12 +134,27 @@ export type TaskItem = {
   canEdit: boolean;
   canDelete: boolean;
 };
-/** Task form values; empty `project`/`assignee`/`dueDate` mean none. */
+export type Subtask = {
+  slug: string;
+  title: string;
+  assignee: number | null;
+  assigneeName: string;
+  status: TaskStatus;
+  dueDate: string | null;
+  isOverdue: boolean;
+};
+/** Task form values; empty `project`/`dueDate` mean none. */
 export type TaskInput = {
   title: string;
   description: string;
   project: string;
-  assignee: string;
+  /** User IDs. Two or more (new tasks only) gives each person their own sub-task. */
+  assignees: string[];
+  /** Per-person deadlines ({user ID: date}) that differ from `dueDate`. */
+  dueDates?: Record<string, string>;
+  /** Parent task slug, "" for none; left out to keep it unchanged. */
+  parent?: string;
+  tags: string[];
   priority: TaskPriority;
   status: TaskStatus;
   dueDate: string;
@@ -315,6 +339,7 @@ type Store = WorkspaceData & {
   uploadTaskImage: (image: File) => Promise<string>;
   deleteTask: (slug: string) => Promise<void>;
   moveTask: (slug: string, status: TaskStatus) => Promise<void>;
+  rescheduleTask: (slug: string, dueDate: string) => Promise<void>;
   notificationList: AppNotification[];
   readNotification: (id: string) => void;
   /** Raw notifications from the API (the employee view maps them itself). */
@@ -382,7 +407,7 @@ const readSaved = () => {
     return "";
   }
 };
-const roleLabel = (r: string) => r.charAt(0).toUpperCase() + r.slice(1);
+const roleLabel = (r: WorkspaceRole) => ROLE_LABELS[r] ?? r;
 const fromApiWorkspace = (w: ApiWorkspace): Workspace => ({
   id: String(w.id),
   name: w.name,
@@ -420,6 +445,8 @@ const fromApiProject = (p: ApiProject): Project => ({
   endDate: p.end_date,
   createdAt: p.created_at,
   updatedAt: p.updated_at,
+  managers: p.managers,
+  managerNames: p.manager_names,
   team: p.team,
 });
 const toApiProject = (i: ProjectInput): ProjectWrite => ({
@@ -434,6 +461,7 @@ const toApiProject = (i: ProjectInput): ProjectWrite => ({
   progress: i.progress,
   start_date: i.startDate || null,
   end_date: i.endDate || null,
+  managers: i.managers.map(Number),
 });
 const fromApiTask = (t: ApiTask): TaskItem => ({
   slug: t.slug,
@@ -443,6 +471,18 @@ const fromApiTask = (t: ApiTask): TaskItem => ({
   projectName: t.project_name,
   assignee: t.assignee,
   assigneeName: t.assignee_name,
+  tags: t.tags ?? [],
+  parent: t.parent,
+  parentTitle: t.parent_title,
+  subtasks: (t.subtasks ?? []).map((s) => ({
+    slug: s.slug,
+    title: s.title,
+    assignee: s.assignee,
+    assigneeName: s.assignee_name,
+    status: s.status,
+    dueDate: s.due_date,
+    isOverdue: s.is_overdue,
+  })),
   priority: t.priority,
   status: t.status,
   dueDate: t.due_date,
@@ -458,7 +498,16 @@ const toApiTask = (i: TaskInput): TaskWrite => ({
   title: i.title,
   description: i.description,
   project: i.project || null,
-  assignee: i.assignee ? Number(i.assignee) : null,
+  ...(i.parent !== undefined ? { parent: i.parent || null } : {}),
+  ...(i.assignees.length > 1
+    ? {
+        assignees: i.assignees.map(Number),
+        due_dates: Object.fromEntries(
+          Object.entries(i.dueDates ?? {}).filter(([id, date]) => date && i.assignees.includes(id)),
+        ),
+      }
+    : { assignee: i.assignees[0] ? Number(i.assignees[0]) : null }),
+  tags: i.tags,
   priority: i.priority,
   status: i.status,
   due_date: i.dueDate || null,
@@ -1055,7 +1104,8 @@ export function MiniOpsProvider({ children }: { children: ReactNode }) {
   const data: WorkspaceData = {
     ...activeWorkspace.data,
     projects: live ? liveProjects : [],
-    tasks: taskList.map(toTaskTuple),
+    // A shared task's work is counted on each person's sub-task.
+    tasks: taskList.filter((t) => !t.subtasks.length).map(toTaskTuple),
     clients: clientList.map(toClientTuple),
     team: live ? members.map(toTeamTuple) : [],
     expenses: expenseList.map(toExpenseTuple),
@@ -1339,10 +1389,18 @@ export function MiniOpsProvider({ children }: { children: ReactNode }) {
     try {
       const saved = await tasksApi.update(apiWid, slug, { status });
       queryClient.setQueryData<ApiTask[]>(key, (l) => l?.map((t) => (t.slug === slug ? saved : t)));
+      // The shared task's status follows its sub-tasks.
+      if (saved.parent) void queryClient.invalidateQueries({ queryKey: key });
     } catch (e) {
       queryClient.setQueryData(key, before);
       throw e;
     }
+  }
+  /** Change one task's due date, e.g. one person's part of a shared task. */
+  async function rescheduleTask(slug: string, dueDate: string) {
+    if (apiWid === null) throw notSignedIn();
+    await tasksApi.update(apiWid, slug, { due_date: dueDate || null });
+    await queryClient.invalidateQueries({ queryKey: ["tasks", apiWid] });
   }
   const updateData = (update: (data: WorkspaceData) => WorkspaceData) =>
     setWorkspaces((current) =>
@@ -1455,6 +1513,7 @@ export function MiniOpsProvider({ children }: { children: ReactNode }) {
         uploadTaskImage,
         deleteTask,
         moveTask,
+        rescheduleTask,
         clientList,
         clientsState,
         saveClient,
@@ -1520,4 +1579,13 @@ export function useNeeds(...keys: DataKey[]) {
   const { need } = useMiniOps();
   const id = keys.join();
   useEffect(() => need(id ? (id.split(",") as DataKey[]) : []), [need, id]);
+}
+/** Tags used on the workspace's tasks, most used first; for suggestions and filters. */
+export function useTaskTags() {
+  const { taskList } = useMiniOps();
+  return useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const t of taskList) for (const tag of t.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+    return [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([tag]) => tag);
+  }, [taskList]);
 }

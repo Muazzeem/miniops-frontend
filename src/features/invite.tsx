@@ -6,11 +6,9 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDisplayDate, toIso } from "@/components/miniops/date-time";
-import { ApiError, inviteLinkApi, type PublicInvitation } from "@/lib/api";
+import { ApiError, inviteLinkApi, ROLE_LABELS, type PublicInvitation } from "@/lib/api";
 import { GoogleButton } from "./login-dialog";
 import { useMiniOps } from "./store";
-
-const ROLE_LABEL = { employer: "Employer", employee: "Employee" };
 
 /** /invite/<token>: the link from the invitation email. */
 export function InvitePage({ token }: { token: string }) {
@@ -70,7 +68,7 @@ function InvitationCard({ token, invitation }: { token: string; invitation: Publ
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState<"accept" | "decline" | null>(null);
   const [confirmDecline, setConfirmDecline] = useState(false);
-  const role = ROLE_LABEL[invitation.role];
+  const role = ROLE_LABELS[invitation.role];
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["invite-link", token] });
 
