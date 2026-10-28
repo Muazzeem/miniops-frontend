@@ -320,6 +320,9 @@ function ProjectsTable({ rows, showMoney }: { rows: Project[]; showMoney: boolea
               <Status>{project.status}</Status>
             </div>
             <dl className="mt-4 grid grid-cols-2 gap-3">
+              <MobileField label="Manager">
+                {project.managerNames?.join(", ") || "Not assigned"}
+              </MobileField>
               {showMoney && (
                 <>
                   <MobileField label="Revenue">{money(project.revenue)}</MobileField>
