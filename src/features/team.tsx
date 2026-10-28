@@ -46,7 +46,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Metric, PageHeader, Status } from "@/components/miniops/core";
+import { Metric, MobileCard, MobileField, PageHeader, Status } from "@/components/miniops/core";
 import { Section } from "@/components/miniops/forms";
 import { SearchableSelect } from "@/components/miniops/select-search";
 import { formatDisplayDate, toIso } from "@/components/miniops/date-time";
@@ -184,61 +184,104 @@ export function Team() {
           )}
         </div>
         <Section title="Members" subtitle="Everyone with access to this workspace.">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Member</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Access</TableHead>
-                {showMoney && <TableHead className="text-right">Hourly cost</TableHead>}
-                <TableHead className="text-right">Capacity</TableHead>
-                <TableHead>Joined</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {members.map((m) => (
-                <TableRow key={m.slug}>
-                  <TableCell>
-                    <Link
-                      to="/team/$memberSlug"
-                      params={{ memberSlug: m.slug }}
-                      className="flex items-center gap-3 hover:text-primary"
-                    >
-                      <Avatar member={m} />
-                      <span className="min-w-0">
-                        <b className="block truncate text-sm">
-                          {m.name}
-                          {m.isMe && (
-                            <span className="ml-2 text-xs font-normal text-muted-foreground">
-                              (you)
-                            </span>
-                          )}
-                        </b>
-                        <small className="block truncate text-xs text-muted-foreground">
-                          {m.email}
-                        </small>
-                      </span>
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    <Status>{m.role}</Status>
-                  </TableCell>
-                  <TableCell>
-                    <AccessSummary member={m} />
-                  </TableCell>
-                  {showMoney && (
-                    <TableCell className="num">
-                      {m.hourlyCost != null ? `${money(m.hourlyCost)}/hr` : "—"}
-                    </TableCell>
-                  )}
-                  <TableCell className="num">{m.weeklyCapacity}h/wk</TableCell>
-                  <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
-                    {fmtDate(m.joinedAt)}
-                  </TableCell>
+          <div className="desktop-table">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Member</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Access</TableHead>
+                  {showMoney && <TableHead className="text-right">Hourly cost</TableHead>}
+                  <TableHead className="text-right">Capacity</TableHead>
+                  <TableHead>Joined</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {members.map((m) => (
+                  <TableRow key={m.slug}>
+                    <TableCell>
+                      <Link
+                        to="/team/$memberSlug"
+                        params={{ memberSlug: m.slug }}
+                        className="flex items-center gap-3 hover:text-primary"
+                      >
+                        <Avatar member={m} />
+                        <span className="min-w-0">
+                          <b className="block truncate text-sm">
+                            {m.name}
+                            {m.isMe && (
+                              <span className="ml-2 text-xs font-normal text-muted-foreground">
+                                (you)
+                              </span>
+                            )}
+                          </b>
+                          <small className="block truncate text-xs text-muted-foreground">
+                            {m.email}
+                          </small>
+                        </span>
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <Status>{m.role}</Status>
+                    </TableCell>
+                    <TableCell>
+                      <AccessSummary member={m} />
+                    </TableCell>
+                    {showMoney && (
+                      <TableCell className="num">
+                        {m.hourlyCost != null ? `${money(m.hourlyCost)}/hr` : "—"}
+                      </TableCell>
+                    )}
+                    <TableCell className="num">{m.weeklyCapacity}h/wk</TableCell>
+                    <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                      {fmtDate(m.joinedAt)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <div className="mobile-list space-y-3">
+            {members.map((member) => (
+              <MobileCard key={member.slug}>
+                <div className="flex items-start justify-between gap-3">
+                  <Link
+                    to="/team/$memberSlug"
+                    params={{ memberSlug: member.slug }}
+                    className="flex min-w-0 items-center gap-3 hover:text-primary"
+                  >
+                    <Avatar member={member} />
+                    <span className="min-w-0">
+                      <b className="block truncate text-sm">
+                        {member.name}
+                        {member.isMe && (
+                          <span className="ml-2 text-xs font-normal text-muted-foreground">
+                            (you)
+                          </span>
+                        )}
+                      </b>
+                      <small className="block truncate text-xs text-muted-foreground">
+                        {member.email}
+                      </small>
+                    </span>
+                  </Link>
+                  <Status>{member.role}</Status>
+                </div>
+                <dl className="mt-4 grid grid-cols-2 gap-3">
+                  {showMoney && (
+                    <MobileField label="Hourly cost">
+                      {member.hourlyCost != null ? `${money(member.hourlyCost)}/hr` : "-"}
+                    </MobileField>
+                  )}
+                  <MobileField label="Capacity">{member.weeklyCapacity}h/wk</MobileField>
+                  <MobileField label="Joined">{fmtDate(member.joinedAt)}</MobileField>
+                </dl>
+                <div className="mt-3 text-sm">
+                  <AccessSummary member={member} />
+                </div>
+              </MobileCard>
+            ))}
+          </div>
         </Section>
         {canManageTeam && (
           <Section
@@ -295,87 +338,130 @@ function InvitationsTable({ invitations }: { invitations: Invitation[] }) {
     }
   }
 
+  function resend(inv: Invitation) {
+    void run(inv.id, () => resendInvitation(inv.id), `Sent a new link to ${inv.email}`);
+  }
+
+  function cancel(inv: Invitation) {
+    void run(inv.id, () => cancelInvitation(inv.id), "Invitation cancelled");
+  }
+
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Email</TableHead>
-          <TableHead>Role</TableHead>
-          <TableHead>Invited by</TableHead>
-          <TableHead>Sent</TableHead>
-          <TableHead>Expires</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
+    <>
+      <div className="desktop-table">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Email</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Invited by</TableHead>
+              <TableHead>Sent</TableHead>
+              <TableHead>Expires</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {invitations.map((inv) => (
+              <TableRow key={inv.id}>
+                <TableCell className="font-medium">{inv.email}</TableCell>
+                <TableCell>
+                  <Status>{inv.role}</Status>
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {inv.invitedByName || "—"}
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                  {inv.sentAt ? fmtDate(inv.sentAt) : "—"}
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                  {fmtDate(inv.expiresAt)}
+                </TableCell>
+                <TableCell>
+                  <InvitationActions
+                    invitation={inv}
+                    busy={busy === inv.id}
+                    onResend={() => resend(inv)}
+                    onCancel={() => cancel(inv)}
+                  />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <div className="mobile-list space-y-3">
         {invitations.map((inv) => (
-          <TableRow key={inv.id}>
-            <TableCell className="font-medium">{inv.email}</TableCell>
-            <TableCell>
+          <MobileCard key={inv.id}>
+            <div className="flex items-start justify-between gap-3">
+              <p className="min-w-0 truncate font-medium">{inv.email}</p>
               <Status>{inv.role}</Status>
-            </TableCell>
-            <TableCell className="text-sm text-muted-foreground">
-              {inv.invitedByName || "—"}
-            </TableCell>
-            <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
-              {inv.sentAt ? fmtDate(inv.sentAt) : "—"}
-            </TableCell>
-            <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
-              {fmtDate(inv.expiresAt)}
-            </TableCell>
-            <TableCell>
-              <div className="flex justify-end gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={busy === inv.id}
-                  onClick={() =>
-                    void run(
-                      inv.id,
-                      () => resendInvitation(inv.id),
-                      `Sent a new link to ${inv.email}`,
-                    )
-                  }
-                >
-                  <RotateCw /> Resend
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:text-destructive"
-                      disabled={busy === inv.id}
-                    >
-                      <X /> Cancel
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Cancel the invitation to {inv.email}?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Their invite link will stop working. You can invite them again later.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Keep it</AlertDialogCancel>
-                      <AlertDialogAction
-                        className="bg-destructive text-white hover:bg-destructive/90"
-                        onClick={() =>
-                          void run(inv.id, () => cancelInvitation(inv.id), "Invitation cancelled")
-                        }
-                      >
-                        Cancel invitation
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </TableCell>
-          </TableRow>
+            </div>
+            <dl className="mt-4 grid grid-cols-2 gap-3">
+              <MobileField label="Invited by">{inv.invitedByName || "-"}</MobileField>
+              <MobileField label="Sent">{inv.sentAt ? fmtDate(inv.sentAt) : "-"}</MobileField>
+              <MobileField label="Expires">{fmtDate(inv.expiresAt)}</MobileField>
+            </dl>
+            <div className="mt-3">
+              <InvitationActions
+                invitation={inv}
+                busy={busy === inv.id}
+                onResend={() => resend(inv)}
+                onCancel={() => cancel(inv)}
+              />
+            </div>
+          </MobileCard>
         ))}
-      </TableBody>
-    </Table>
+      </div>
+    </>
+  );
+}
+
+function InvitationActions({
+  invitation,
+  busy,
+  onResend,
+  onCancel,
+}: {
+  invitation: Invitation;
+  busy: boolean;
+  onResend: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="flex justify-end gap-1">
+      <Button variant="ghost" size="sm" disabled={busy} onClick={onResend}>
+        <RotateCw /> Resend
+      </Button>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-destructive hover:text-destructive"
+            disabled={busy}
+          >
+            <X /> Cancel
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel the invitation to {invitation.email}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Their invite link will stop working. You can invite them again later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep it</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-white hover:bg-destructive/90"
+              onClick={onCancel}
+            >
+              Cancel invitation
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }
 

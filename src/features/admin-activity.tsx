@@ -28,7 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PageHeader, Status } from "@/components/miniops/core";
+import { MobileCard, MobileField, PageHeader, Status } from "@/components/miniops/core";
 
 const activity = [
   [
@@ -229,6 +229,33 @@ export function AdminPage() {
 }
 
 function AdminTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
+  return (
+    <>
+      <div className="desktop-table">
+        <AdminDesktopTable headers={headers} rows={rows} />
+      </div>
+      <div className="mobile-list space-y-3">
+        {rows.map((row, index) => (
+          <MobileCard key={`${row[0]}-${index}`}>
+            <p className="truncate font-medium capitalize">{row[0]}</p>
+            <dl className="mt-3 grid grid-cols-2 gap-3">
+              {row.slice(1).map((cell, cellIndex) => {
+                const header = headers[cellIndex + 1] ?? "";
+                return (
+                  <MobileField key={header} label={header}>
+                    {header === "Status" ? <Status>{cell}</Status> : cell}
+                  </MobileField>
+                );
+              })}
+            </dl>
+          </MobileCard>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function AdminDesktopTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
   return (
     <Table>
       <TableHeader>

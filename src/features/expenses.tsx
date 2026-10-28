@@ -66,7 +66,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Metric, PageHeader, Status } from "@/components/miniops/core";
+import { Metric, MobileCard, MobileField, PageHeader, Status } from "@/components/miniops/core";
 import { Section } from "@/components/miniops/forms";
 import { RichText, RichTextEditor } from "@/components/miniops/rich-text";
 import { SearchableSelect } from "@/components/miniops/select-search";
@@ -313,78 +313,136 @@ function ExpensesTab({ canEdit }: { canEdit: boolean }) {
             </Button>
           )}
         </div>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Expense</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Project</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Recurring</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-8">
-                <span className="sr-only">Receipt</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.length === 0 && (
+        <div className="desktop-table">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
-                  No expenses match these filters.{" "}
-                  <Button variant="link" className="h-auto p-0" onClick={clear}>
-                    Clear filters
-                  </Button>
-                </TableCell>
+                <TableHead>Expense</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Project</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Recurring</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="w-8">
+                  <span className="sr-only">Receipt</span>
+                </TableHead>
               </TableRow>
-            )}
-            {rows.map((e) => (
-              <TableRow key={e.slug} className="cursor-pointer" onClick={() => setSelected(e.slug)}>
-                <TableCell>
-                  <button
-                    type="button"
-                    className="text-left font-medium hover:text-primary"
-                    onClick={(ev) => {
-                      ev.stopPropagation();
-                      setSelected(e.slug);
-                    }}
+            </TableHeader>
+            <TableBody>
+              {rows.length === 0 && (
+                <TableRow>
+                  <TableCell
+                    colSpan={8}
+                    className="py-10 text-center text-sm text-muted-foreground"
                   >
-                    {e.title}
-                  </button>
-                  {e.vendor && (
-                    <small className="block text-xs text-muted-foreground">{e.vendor}</small>
-                  )}
-                </TableCell>
-                <TableCell>{e.category}</TableCell>
-                <TableCell>
-                  {e.projectName || <span className="text-muted-foreground">Agency overhead</span>}
-                </TableCell>
-                <TableCell className="num">{cash(e.amount)}</TableCell>
-                <TableCell className="whitespace-nowrap tabular-nums">
-                  {formatDisplayDate(e.date)}
-                </TableCell>
-                <TableCell>
-                  {e.isRecurring ? (
-                    <span className="inline-flex items-center gap-1 text-sm">
-                      <Repeat className="size-3.5 text-primary" /> {e.subscriptionName}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">No</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Status>{e.status}</Status>
-                </TableCell>
-                <TableCell>
-                  {e.receiptUrl && (
-                    <Paperclip className="size-4 text-muted-foreground" aria-label="Has receipt" />
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                    No expenses match these filters.{" "}
+                    <Button variant="link" className="h-auto p-0" onClick={clear}>
+                      Clear filters
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              )}
+              {rows.map((e) => (
+                <TableRow
+                  key={e.slug}
+                  className="cursor-pointer"
+                  onClick={() => setSelected(e.slug)}
+                >
+                  <TableCell>
+                    <button
+                      type="button"
+                      className="text-left font-medium hover:text-primary"
+                      onClick={(ev) => {
+                        ev.stopPropagation();
+                        setSelected(e.slug);
+                      }}
+                    >
+                      {e.title}
+                    </button>
+                    {e.vendor && (
+                      <small className="block text-xs text-muted-foreground">{e.vendor}</small>
+                    )}
+                  </TableCell>
+                  <TableCell>{e.category}</TableCell>
+                  <TableCell>
+                    {e.projectName || (
+                      <span className="text-muted-foreground">Agency overhead</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="num">{cash(e.amount)}</TableCell>
+                  <TableCell className="whitespace-nowrap tabular-nums">
+                    {formatDisplayDate(e.date)}
+                  </TableCell>
+                  <TableCell>
+                    {e.isRecurring ? (
+                      <span className="inline-flex items-center gap-1 text-sm">
+                        <Repeat className="size-3.5 text-primary" /> {e.subscriptionName}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">No</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Status>{e.status}</Status>
+                  </TableCell>
+                  <TableCell>
+                    {e.receiptUrl && (
+                      <Paperclip
+                        className="size-4 text-muted-foreground"
+                        aria-label="Has receipt"
+                      />
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+        <div className="mobile-list space-y-3">
+          {rows.length === 0 && (
+            <p className="py-10 text-center text-sm text-muted-foreground">
+              No expenses match these filters.{" "}
+              <Button variant="link" className="h-auto p-0" onClick={clear}>
+                Clear filters
+              </Button>
+            </p>
+          )}
+          {rows.map((expense) => (
+            <button
+              key={expense.slug}
+              type="button"
+              className="block w-full text-left"
+              onClick={() => setSelected(expense.slug)}
+            >
+              <MobileCard>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{expense.title}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {expense.vendor || expense.category}
+                    </p>
+                  </div>
+                  <span className="num font-semibold">{cash(expense.amount)}</span>
+                </div>
+                <dl className="mt-4 grid grid-cols-2 gap-3">
+                  <MobileField label="Category">{expense.category}</MobileField>
+                  <MobileField label="Project">
+                    {expense.projectName || "Agency overhead"}
+                  </MobileField>
+                  <MobileField label="Date">{formatDisplayDate(expense.date)}</MobileField>
+                  <MobileField label="Recurring">
+                    {expense.isRecurring ? expense.subscriptionName : "No"}
+                  </MobileField>
+                  <MobileField label="Status">
+                    <Status>{expense.status}</Status>
+                  </MobileField>
+                  {expense.receiptUrl && <MobileField label="Receipt">Attached</MobileField>}
+                </dl>
+              </MobileCard>
+            </button>
+          ))}
+        </div>
       </Section>
       <ExpenseSheet expense={current} onClose={() => setSelected(null)} />
     </>

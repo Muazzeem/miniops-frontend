@@ -636,3 +636,18 @@ export function Status({ children }: { children: ReactNode }) {
     </span>
   );
 }
+
+/** One card in the phone list that replaces a table on small screens. */
+export function MobileCard({ children }: { children: ReactNode }) {
+  return <div className="rounded-2xl bg-card p-4 shadow-card">{children}</div>;
+}
+
+/** A small label with its value, shown inside a MobileCard. */
+export function MobileField({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="mt-0.5 truncate text-sm font-medium">{children}</dd>
+    </div>
+  );
+}
