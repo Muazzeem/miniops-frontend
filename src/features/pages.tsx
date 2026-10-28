@@ -31,10 +31,10 @@ import { ExpensesPage } from "./expenses";
 import { Projects } from "./projects";
 import { Clients } from "./clients";
 const SearchBar = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
-  <div className="relative">
+  <div className="relative w-full sm:w-auto">
     <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
     <Input
-      className="w-64 pl-9"
+      className="w-full pl-9 sm:w-64"
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder="Search…"

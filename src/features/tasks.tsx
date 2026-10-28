@@ -648,58 +648,60 @@ function TaskCalendar({ rows }: { rows: TaskItem[] }) {
           </Button>
         </div>
       </div>
-      <div className="grid grid-cols-7">
-        {WEEKDAYS.map((d) => (
-          <div key={d} className="border-b p-2 text-xs font-medium text-muted-foreground">
-            {d}
-          </div>
-        ))}
-        {days.map((d) => {
-          const due = byDate.get(d.iso) ?? [];
-          return (
-            <div
-              key={d.iso}
-              className={cn(
-                "min-h-24 border-b border-r p-1.5 text-xs",
-                !d.inMonth && "bg-muted/40 text-muted-foreground",
-              )}
-            >
-              <span
+      <div className="overflow-x-auto">
+        <div className="grid min-w-[560px] grid-cols-7">
+          {WEEKDAYS.map((d) => (
+            <div key={d} className="border-b p-2 text-xs font-medium text-muted-foreground">
+              {d}
+            </div>
+          ))}
+          {days.map((d) => {
+            const due = byDate.get(d.iso) ?? [];
+            return (
+              <div
+                key={d.iso}
                 className={cn(
-                  "inline-grid size-6 place-items-center rounded-full",
-                  d.iso === today && "bg-primary font-semibold text-primary-foreground",
+                  "min-h-24 border-b border-r p-1.5 text-xs",
+                  !d.inMonth && "bg-muted/40 text-muted-foreground",
                 )}
               >
-                {d.day}
-              </span>
-              <div className="mt-1 space-y-1">
-                {due.slice(0, 3).map((t) => (
-                  <Link
-                    key={t.slug}
-                    to="/tasks/$taskSlug"
-                    params={{ taskSlug: t.slug }}
-                    title={t.title}
-                    className={cn(
-                      "block truncate rounded px-1.5 py-1 hover:ring-1 hover:ring-primary/40",
-                      t.status === "Done"
-                        ? "bg-muted text-muted-foreground line-through"
-                        : t.isOverdue
-                          ? "bg-danger-soft text-destructive"
-                          : "bg-accent text-accent-foreground",
-                    )}
-                  >
-                    {t.title}
-                  </Link>
-                ))}
-                {due.length > 3 && (
-                  <small className="block px-1.5 text-muted-foreground">
-                    +{due.length - 3} more
-                  </small>
-                )}
+                <span
+                  className={cn(
+                    "inline-grid size-6 place-items-center rounded-full",
+                    d.iso === today && "bg-primary font-semibold text-primary-foreground",
+                  )}
+                >
+                  {d.day}
+                </span>
+                <div className="mt-1 space-y-1">
+                  {due.slice(0, 3).map((t) => (
+                    <Link
+                      key={t.slug}
+                      to="/tasks/$taskSlug"
+                      params={{ taskSlug: t.slug }}
+                      title={t.title}
+                      className={cn(
+                        "block truncate rounded px-1.5 py-1 hover:ring-1 hover:ring-primary/40",
+                        t.status === "Done"
+                          ? "bg-muted text-muted-foreground line-through"
+                          : t.isOverdue
+                            ? "bg-danger-soft text-destructive"
+                            : "bg-accent text-accent-foreground",
+                      )}
+                    >
+                      {t.title}
+                    </Link>
+                  ))}
+                  {due.length > 3 && (
+                    <small className="block px-1.5 text-muted-foreground">
+                      +{due.length - 3} more
+                    </small>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );
