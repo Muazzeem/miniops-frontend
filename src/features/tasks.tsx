@@ -389,6 +389,48 @@ export function TaskTable({
   rows: TaskItem[];
   showProject?: boolean;
 }) {
+  return (
+    <>
+      <div className="desktop-table">
+        <TaskDesktopTable rows={rows} showProject={showProject} />
+      </div>
+      <div className="mobile-list space-y-3">
+        {rows.map((task) => (
+          <MobileCard key={task.slug}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <TaskLink task={task} />
+                {showProject && (
+                  <div className="mt-0.5 truncate text-xs">
+                    <ProjectLink task={task} />
+                  </div>
+                )}
+                <TagList tags={task.tags} className="mt-1" />
+              </div>
+              <TaskRowActions task={task} />
+            </div>
+            <dl className="mt-4 grid grid-cols-2 gap-3">
+              <MobileField label="Assigned to">
+                <Assignees task={task} />
+              </MobileField>
+              <MobileField label="Due date">
+                <DueDate task={task} />
+              </MobileField>
+              <MobileField label="Priority">
+                <Status>{task.priority}</Status>
+              </MobileField>
+              <MobileField label="Status">
+                <Status>{task.status}</Status>
+              </MobileField>
+            </dl>
+          </MobileCard>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function TaskDesktopTable({ rows, showProject }: { rows: TaskItem[]; showProject: boolean }) {
   const { taskList } = useMiniOps();
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const toggle = (slug: string) =>
@@ -469,45 +511,6 @@ export function TaskTable({
     </TableRow>
   );
 
-  return (
-    <>
-      <div className="desktop-table">
-        <TaskDesktopTable rows={rows} showProject={showProject} />
-      </div>
-      <div className="mobile-list space-y-3">
-        {rows.map((task) => (
-          <MobileCard key={task.slug}>
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <TaskLink task={task} />
-                {showProject && (
-                  <div className="mt-0.5 truncate text-xs">
-                    <ProjectLink task={task} />
-                  </div>
-                )}
-              </div>
-              <TaskRowActions task={task} />
-            </div>
-            <dl className="mt-4 grid grid-cols-2 gap-3">
-              <MobileField label="Assigned to">{task.assigneeName || "Unassigned"}</MobileField>
-              <MobileField label="Due date">
-                <DueDate task={task} />
-              </MobileField>
-              <MobileField label="Priority">
-                <Status>{task.priority}</Status>
-              </MobileField>
-              <MobileField label="Status">
-                <Status>{task.status}</Status>
-              </MobileField>
-            </dl>
-          </MobileCard>
-        ))}
-      </div>
-    </>
-  );
-}
-
-function TaskDesktopTable({ rows, showProject }: { rows: TaskItem[]; showProject: boolean }) {
   return (
     <Table>
       <TableHeader>
