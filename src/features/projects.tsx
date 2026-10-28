@@ -1,5 +1,6 @@
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
   FolderKanban,
@@ -63,7 +64,7 @@ import {
 import { Metric, MobileCard, MobileField, PageHeader, Status } from "@/components/miniops/core";
 import { Section } from "@/components/miniops/forms";
 import { ProjectFiles } from "./project-files";
-import { SearchableSelect } from "@/components/miniops/select-search";
+import { SearchableMultiSelect, SearchableSelect } from "@/components/miniops/select-search";
 import {
   DateInput,
   DateRangePicker,
@@ -72,7 +73,7 @@ import {
   type IsoRange,
 } from "@/components/miniops/date-time";
 import { cash, money, type Project } from "@/data/mock";
-import { PROJECT_STATUSES, PROJECT_TYPES } from "@/lib/api";
+import { membersApi, PROJECT_STATUSES, PROJECT_TYPES } from "@/lib/api";
 import { LoginDialog } from "./login-dialog";
 import { TaskFormDialog, TaskTable } from "./tasks";
 import { ExpenseFormDialog } from "./expenses";
@@ -414,6 +415,9 @@ function ProjectsTable({ rows, showMoney }: { rows: Project[]; showMoney: boolea
               <Status>{project.status}</Status>
             </div>
             <dl className="mt-4 grid grid-cols-2 gap-3">
+              <MobileField label="Manager">
+                {project.managerNames?.join(", ") || "Not assigned"}
+              </MobileField>
               {showMoney && (
                 <>
                   <MobileField label="Revenue">{money(project.revenue)}</MobileField>
@@ -448,6 +452,7 @@ function ProjectsDesktopTable({ rows, showMoney }: { rows: Project[]; showMoney:
         <TableRow>
           <TableHead>Project</TableHead>
           <TableHead>Client</TableHead>
+          <TableHead>Manager</TableHead>
           <TableHead>Status</TableHead>
           {showMoney && (
             <>
@@ -491,6 +496,9 @@ function ProjectsDesktopTable({ rows, showMoney }: { rows: Project[]; showMoney:
               ) : (
                 <span className="text-muted-foreground">—</span>
               )}
+            </TableCell>
+            <TableCell>
+              {p.managerNames?.join(", ") || <span className="text-muted-foreground">—</span>}
             </TableCell>
             <TableCell>
               <Status>{p.status}</Status>
@@ -604,7 +612,8 @@ export function ProjectDetail({ slug }: { slug: string }) {
   const projectHours = projectTime.reduce((s, e) => s + e.hours, 0);
   const showMoney = can("financials");
   const p = projects.find((x) => x.id === slug);
-  const projectTasks = taskList.filter((t) => t.project === slug);
+  // Shared tasks once; each person's part is on the task's page.
+  const projectTasks = taskList.filter((t) => t.project === slug && !t.parent);
 
   if (authStatus === "signedOut") return <SignInPrompt />;
   if (projectsState.error)
@@ -720,6 +729,10 @@ export function ProjectDetail({ slug }: { slug: string }) {
               <dl className="divide-y text-sm">
                 {[
                   ["Type", p.projectType || "—"],
+                  [
+                    p.managerNames?.length === 1 ? "Project manager" : "Project managers",
+                    p.managerNames?.join(", ") || "Not assigned",
+                  ],
                   ["Start date", p.startDate ? formatDisplayDate(p.startDate) : "Not set"],
                   ["End date", p.endDate ? formatDisplayDate(p.endDate) : "Not set"],
                   ["Created", p.createdAt ? formatDisplayDate(toIso(new Date(p.createdAt))) : "—"],
@@ -1008,6 +1021,7 @@ const toForm = (p?: Project, defaultClient = ""): FormState => ({
   progress: p ? String(p.progress) : "0",
   startDate: p?.startDate ?? "",
   endDate: p?.endDate ?? "",
+  managers: (p?.managers ?? []).map(String),
 });
 
 function validate(f: FormState) {
@@ -1036,7 +1050,7 @@ export function ProjectFormDialog({
   client?: string;
   children: ReactNode;
 }) {
-  const { saveProject, clientList, can } = useMiniOps();
+  const { saveProject, clientList, activeWorkspace, live, can } = useMiniOps();
   // Money fields are only shown (and only saved by the API) with the financials permission.
   const showMoney = can("financials");
   const navigate = useNavigate();
@@ -1046,6 +1060,26 @@ export function ProjectFormDialog({
   const [form, setForm] = useState<FormState>(() => toForm(project, client));
   const [errors, setErrors] = useState<ReturnType<typeof validate>>({});
   const [saving, setSaving] = useState(false);
+  const wid = live && activeWorkspace.id !== "loading" ? Number(activeWorkspace.id) : null;
+  // Under the "members" key so team changes (e.g. a new role) refresh it too.
+  const managersQuery = useQuery({
+    queryKey: ["members", wid, "project_manager"],
+    queryFn: () => membersApi.list(wid!, ["project_manager"]),
+    enabled: open && wid !== null,
+  });
+  // Keep current managers listed even if their role has since changed.
+  const managerOptions = [
+    ...(managersQuery.data ?? []).map((m) => ({
+      value: String(m.id),
+      label: m.name,
+      hint: m.title || m.email,
+    })),
+    ...(project?.managers ?? []).map((id, i) => ({
+      value: String(id),
+      label: project?.managerNames?.[i] ?? "",
+      hint: "",
+    })),
+  ].filter((o, i, all) => all.findIndex((x) => x.value === o.value) === i);
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
 
@@ -1195,6 +1229,18 @@ export function ProjectFormDialog({
                 options={[...PROJECT_STATUSES]}
                 value={form.status}
                 onChange={(v) => set("status", v || "Planning")}
+              />,
+            )}
+            {field(
+              "managers",
+              "Project managers",
+              <SearchableMultiSelect
+                id="project-managers"
+                placeholder="Not assigned"
+                searchPlaceholder="Search people…"
+                options={managerOptions}
+                value={form.managers}
+                onChange={(v) => set("managers", v)}
               />,
             )}
             {showMoney && (

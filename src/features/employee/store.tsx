@@ -256,7 +256,10 @@ export function EmployeeProvider({ children }: { children: ReactNode }) {
   );
 
   const tasks = useMemo(
-    () => ops.taskList.filter((t) => t.assignee === myId || (t.createdByMe && !t.assignee)),
+    () =>
+      ops.taskList.filter(
+        (t) => t.assignee === myId || (t.createdByMe && !t.assignee && !t.subtasks.length),
+      ),
     [ops.taskList, myId],
   );
   const timeEntries = useMemo(
