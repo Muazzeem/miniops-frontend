@@ -294,12 +294,13 @@ export function Projects() {
 }
 
 function ProjectsTable({ rows, showMoney }: { rows: Project[]; showMoney: boolean }) {
+  // This table has many columns, so it switches to cards on tablets too (below 1280px).
   return (
     <>
-      <div className="desktop-table">
+      <div className="hidden xl:block">
         <ProjectsDesktopTable rows={rows} showMoney={showMoney} />
       </div>
-      <div className="mobile-list space-y-3">
+      <div className="grid gap-3 md:grid-cols-2 xl:hidden">
         {rows.map((project) => (
           <MobileCard key={project.id}>
             <div className="flex items-start justify-between gap-3">
