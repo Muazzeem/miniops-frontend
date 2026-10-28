@@ -364,6 +364,9 @@ function ProjectCard({ project, showMoney }: { project: Project; showMoney: bool
             <MobileField label="Margin">{project.margin}%</MobileField>
           </>
         )}
+        <MobileField label="Manager">
+          {project.managerNames?.join(", ") || "Not assigned"}
+        </MobileField>
         <MobileField label="Due">
           {project.endDate ? formatDisplayDate(project.endDate) : "Not set"}
         </MobileField>
