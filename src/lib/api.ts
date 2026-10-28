@@ -288,8 +288,13 @@ export const usersApi = {
     api<ApiUser>("/users/me/", { method: "PATCH", body: JSON.stringify({ avatar: null }) }),
 };
 
-export type WorkspaceRole = "employer" | "employee";
-export const WORKSPACE_ROLES: WorkspaceRole[] = ["employer", "employee"];
+export type WorkspaceRole = "employer" | "project_manager" | "employee";
+export const WORKSPACE_ROLES: WorkspaceRole[] = ["employer", "project_manager", "employee"];
+export const ROLE_LABELS: Record<WorkspaceRole, string> = {
+  employer: "Employer",
+  project_manager: "Project Manager",
+  employee: "Employee",
+};
 
 /** Access levels per module, enforced by the backend (see miniops/workspaces/permissions.py). */
 export type AccessLevel = "none" | "view" | "edit";
@@ -387,6 +392,9 @@ export type ApiProject = {
   health: "Healthy" | "Attention" | "At Risk" | "Loss";
   start_date: string | null;
   end_date: string | null;
+  /** User IDs of the employers or project managers in charge; always on the team. */
+  managers: number[];
+  manager_names: string[];
   team: number[];
   created_at: string;
   updated_at: string;
@@ -406,6 +414,7 @@ export type ProjectWrite = Partial<
     | "progress"
     | "start_date"
     | "end_date"
+    | "managers"
   >
 > & {
   /** Existing client slug, or null for none. */
@@ -490,7 +499,11 @@ export type MemberUpdate = {
 };
 
 export const membersApi = {
-  list: (workspaceId: number) => listAll<ApiMember>(`/workspaces/${workspaceId}/members/`),
+  /** `roles` limits the list to members with those roles. */
+  list: (workspaceId: number, roles?: WorkspaceRole[]) =>
+    listAll<ApiMember>(
+      `/workspaces/${workspaceId}/members/${roles?.length ? `?role=${roles.join(",")}` : ""}`,
+    ),
   update: (workspaceId: number, slug: string, input: MemberUpdate) =>
     api<ApiMember>(`/workspaces/${workspaceId}/members/${slug}/`, json("PATCH", input)),
   remove: (workspaceId: number, slug: string) =>
@@ -574,6 +587,13 @@ export type ApiTask = {
   project_name: string;
   assignee: number | null;
   assignee_name: string;
+  /** Lowercase labels. */
+  tags: string[];
+  /** Slug of the task this is a sub-task of (one level deep). */
+  parent: string | null;
+  parent_title: string;
+  /** This task's sub-tasks, oldest first. */
+  subtasks: ApiSubtask[];
   priority: TaskPriority;
   status: TaskStatus;
   due_date: string | null;
@@ -589,15 +609,42 @@ export type ApiTask = {
   updated_at: string;
 };
 
+export type ApiSubtask = {
+  slug: string;
+  title: string;
+  assignee: number | null;
+  assignee_name: string;
+  status: TaskStatus;
+  due_date: string | null;
+  is_overdue: boolean;
+  completed_at: string | null;
+};
+
 export type ApiTaskImage = { id: number; url: string; created_at: string };
 
 /** Writable task fields; `project` is a project slug, `assignee` a member's user ID. */
 export type TaskWrite = Partial<
   Pick<
     ApiTask,
-    "title" | "description" | "project" | "assignee" | "priority" | "status" | "due_date"
+    | "title"
+    | "description"
+    | "project"
+    | "assignee"
+    | "tags"
+    | "parent"
+    | "priority"
+    | "status"
+    | "due_date"
   >
->;
+> & {
+  /**
+   * New tasks only; overrides `assignee`. Two or more people each get their own sub-task:
+   * of this new task (which then has no assignee), or with `parent` set, of that task.
+   */
+  assignees?: number[];
+  /** With `assignees`: {user ID: date} for people whose deadline differs from `due_date`. */
+  due_dates?: Record<string, string>;
+};
 
 export const tasksApi = {
   list: (workspaceId: number) => listAll<ApiTask>(`/workspaces/${workspaceId}/tasks/`),

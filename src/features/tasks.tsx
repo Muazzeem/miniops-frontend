@@ -14,6 +14,7 @@ import {
   ClipboardList,
   LayoutGrid,
   List,
+  ListPlus,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -68,7 +69,8 @@ import {
 import { MobileCard, MobileField, PageHeader, Status } from "@/components/miniops/core";
 import { Section } from "@/components/miniops/forms";
 import { RichText, RichTextEditor } from "@/components/miniops/rich-text";
-import { SearchableSelect } from "@/components/miniops/select-search";
+import { SearchableMultiSelect, SearchableSelect } from "@/components/miniops/select-search";
+import { TagList } from "@/components/miniops/tag-input";
 import {
   DateInput,
   DateRangePicker,
@@ -76,10 +78,10 @@ import {
   toIso,
   type IsoRange,
 } from "@/components/miniops/date-time";
-import { TASK_PRIORITIES, TASK_STATUSES, type TaskStatus } from "@/lib/api";
+import { ROLE_LABELS, TASK_PRIORITIES, TASK_STATUSES, type TaskStatus } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { ErrorState, NoAccess, SignInPrompt } from "./projects";
-import { useMiniOps, type TaskInput, type TaskItem } from "./store";
+import { useMiniOps, useTaskTags, type TaskInput, type TaskItem } from "./store";
 
 const NO_PROJECT = "__none__";
 const UNASSIGNED = "__unassigned__";
@@ -111,36 +113,45 @@ export function Tasks() {
   const [q, setQ] = useState("");
   const [project, setProject] = useState("");
   const [assignee, setAssignee] = useState("");
+  const [tag, setTag] = useState("");
   const [status, setStatus] = useState("all");
   const [priority, setPriority] = useState("all");
   const [range, setRange] = useState<IsoRange>({ from: "", to: "" });
 
   const rows = useMemo(() => {
     const term = q.trim().toLowerCase();
+    // Shared tasks are listed once; each person's part is on the task's page.
     return taskList
+      .filter((t) => !t.parent)
       .filter((t) => !term || `${t.title} ${t.projectName}`.toLowerCase().includes(term))
       .filter((t) => !project || (project === NO_PROJECT ? !t.project : t.project === project))
       .filter(
         (t) =>
-          !assignee || (assignee === UNASSIGNED ? !t.assignee : String(t.assignee) === assignee),
+          !assignee ||
+          (assignee === UNASSIGNED
+            ? !t.assignee && !t.subtasks.length
+            : assigneeIds(t).includes(Number(assignee))),
       )
       .filter((t) =>
         status === "all" ? true : status === OVERDUE ? t.isOverdue : t.status === status,
       )
+      .filter((t) => !tag || t.tags.includes(tag))
       .filter((t) => priority === "all" || t.priority === priority)
       .filter((t) => {
         if (!range.from) return true;
         return !!t.dueDate && t.dueDate >= range.from && t.dueDate <= (range.to || range.from);
       })
       .sort(byUrgency);
-  }, [taskList, q, project, assignee, status, priority, range]);
+  }, [taskList, q, project, assignee, tag, status, priority, range]);
+  const allTags = useTaskTags();
   const filtered = Boolean(
-    q || project || assignee || status !== "all" || priority !== "all" || range.from,
+    q || project || assignee || tag || status !== "all" || priority !== "all" || range.from,
   );
   const clearFilters = () => {
     setQ("");
     setProject("");
     setAssignee("");
+    setTag("");
     setStatus("all");
     setPriority("all");
     setRange({ from: "", to: "" });
@@ -218,6 +229,18 @@ export function Tasks() {
               value={assignee}
               onChange={setAssignee}
             />
+            {allTags.length > 0 && (
+              <SearchableSelect
+                variant="filter"
+                clearable
+                aria-label="Tag"
+                placeholder="Any tag"
+                searchPlaceholder="Search tags…"
+                options={allTags}
+                value={tag}
+                onChange={setTag}
+              />
+            )}
             <Select value={status} onValueChange={setStatus}>
               <SelectTrigger className="w-36" aria-label="Status">
                 <SelectValue />
@@ -291,6 +314,27 @@ export function Tasks() {
   );
 }
 
+/** Who works on a task: its assignee and the people on its sub-tasks. */
+const assigneeIds = (t: TaskItem) => [t.assignee, ...t.subtasks.map((s) => s.assignee)];
+
+/** The assignee, or the people on its sub-tasks; plus sub-task progress. */
+function Assignees({ task }: { task: TaskItem }) {
+  const done = task.subtasks.filter((s) => s.status === "Done").length;
+  const names =
+    task.assigneeName ||
+    [...new Set(task.subtasks.map((s) => s.assigneeName).filter(Boolean))].join(", ");
+  return (
+    <span>
+      {names || <span className="text-muted-foreground">Unassigned</span>}
+      {task.subtasks.length > 0 && (
+        <small className="block text-xs text-muted-foreground">
+          {done}/{task.subtasks.length} sub-tasks done
+        </small>
+      )}
+    </span>
+  );
+}
+
 function TaskLink({ task, className }: { task: TaskItem; className?: string }) {
   return (
     <Link
@@ -316,7 +360,7 @@ function ProjectLink({ task }: { task: TaskItem }) {
   );
 }
 
-/** Shared by the Tasks page and a project's Tasks tab. */
+/** Shared by the Tasks page and a project's Tasks tab. Tasks with sub-tasks expand to show them. */
 export function TaskTable({
   rows,
   showProject = true,
@@ -324,6 +368,75 @@ export function TaskTable({
   rows: TaskItem[];
   showProject?: boolean;
 }) {
+  const { taskList } = useMiniOps();
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+  const toggle = (slug: string) =>
+    setExpanded((cur) => {
+      const next = new Set(cur);
+      if (next.has(slug)) next.delete(slug);
+      else next.add(slug);
+      return next;
+    });
+  const subtasksOf = (t: TaskItem) =>
+    t.subtasks.flatMap((s) => taskList.find((x) => x.slug === s.slug) ?? []);
+
+  const row = (t: TaskItem, nested: boolean) => (
+    <TableRow
+      key={t.slug}
+      className={cn(t.isOverdue && "bg-danger-soft/30", nested && "bg-muted/30")}
+    >
+      <TableCell>
+        <div className={cn("flex items-start gap-1.5", nested && "pl-7")}>
+          {!nested &&
+            (t.subtasks.length ? (
+              <button
+                type="button"
+                onClick={() => toggle(t.slug)}
+                aria-expanded={expanded.has(t.slug)}
+                aria-label={`${expanded.has(t.slug) ? "Hide" : "Show"} sub-tasks of ${t.title}`}
+                className="mt-0.5 grid size-5 shrink-0 place-items-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
+              >
+                <ChevronRight
+                  className={cn("size-4 transition-transform", expanded.has(t.slug) && "rotate-90")}
+                />
+              </button>
+            ) : (
+              <span className="size-5 shrink-0" />
+            ))}
+          <div className="min-w-0">
+            <TaskLink task={t} />
+            {t.subtasks.length > 0 && (
+              <span className="ml-2 text-xs text-muted-foreground">
+                {t.subtasks.length} sub-task{t.subtasks.length === 1 ? "" : "s"}
+              </span>
+            )}
+            <TagList tags={t.tags} className="mt-1" />
+          </div>
+        </div>
+      </TableCell>
+      {showProject && (
+        <TableCell>
+          <ProjectLink task={t} />
+        </TableCell>
+      )}
+      <TableCell>
+        <Assignees task={t} />
+      </TableCell>
+      <TableCell>
+        <Status>{t.priority}</Status>
+      </TableCell>
+      <TableCell className="whitespace-nowrap">
+        <DueDate task={t} />
+      </TableCell>
+      <TableCell>
+        <Status>{t.status}</Status>
+      </TableCell>
+      <TableCell className="text-right">
+        <TaskRowActions task={t} />
+      </TableCell>
+    </TableRow>
+  );
+
   return (
     <>
       <div className="desktop-table">
@@ -377,33 +490,10 @@ function TaskDesktopTable({ rows, showProject }: { rows: TaskItem[]; showProject
         </TableRow>
       </TableHeader>
       <TableBody>
-        {rows.map((t) => (
-          <TableRow key={t.slug} className={t.isOverdue ? "bg-danger-soft/30" : undefined}>
-            <TableCell>
-              <TaskLink task={t} />
-            </TableCell>
-            {showProject && (
-              <TableCell>
-                <ProjectLink task={t} />
-              </TableCell>
-            )}
-            <TableCell>
-              {t.assigneeName || <span className="text-muted-foreground">Unassigned</span>}
-            </TableCell>
-            <TableCell>
-              <Status>{t.priority}</Status>
-            </TableCell>
-            <TableCell className="whitespace-nowrap">
-              <DueDate task={t} />
-            </TableCell>
-            <TableCell>
-              <Status>{t.status}</Status>
-            </TableCell>
-            <TableCell className="text-right">
-              <TaskRowActions task={t} />
-            </TableCell>
-          </TableRow>
-        ))}
+        {rows.flatMap((t) => [
+          row(t, false),
+          ...(expanded.has(t.slug) ? subtasksOf(t).map((c) => row(c, true)) : []),
+        ])}
       </TableBody>
     </Table>
   );
@@ -454,17 +544,23 @@ function TaskBoard({ rows, canEdit }: { rows: TaskItem[]; canEdit: boolean }) {
               {column.map((t) => (
                 <div
                   key={t.slug}
-                  draggable={canEdit && t.canEdit}
+                  draggable={canEdit && t.canEdit && !t.subtasks.length}
                   onDragStart={(e) => e.dataTransfer.setData("text/plain", t.slug)}
                   className={cn(
                     "rounded-lg border bg-card p-3 shadow-xs",
-                    canEdit && t.canEdit && "cursor-grab active:cursor-grabbing",
+                    canEdit &&
+                      t.canEdit &&
+                      !t.subtasks.length &&
+                      "cursor-grab active:cursor-grabbing",
                   )}
                 >
                   <TaskLink task={t} className="text-sm" />
+                  <TagList tags={t.tags} className="mt-1.5" />
                   <p className="mt-1 text-xs text-muted-foreground">
                     {t.projectName || "No project"}
                     {t.assigneeName && ` · ${t.assigneeName}`}
+                    {t.subtasks.length > 0 &&
+                      ` · ${t.subtasks.filter((s) => s.status === "Done").length}/${t.subtasks.length} sub-tasks done`}
                   </p>
                   <div className="mt-3 flex items-center justify-between text-xs">
                     <Status>{t.priority}</Status>
@@ -664,7 +760,13 @@ export function TaskDetail({ slug }: { slug: string }) {
     <>
       <PageHeader
         title={task.title}
-        description={task.projectName ? `Task in ${task.projectName}` : "Agency overhead task"}
+        description={
+          task.parent
+            ? `${task.assigneeName || "Someone"}'s part of “${task.parentTitle}”`
+            : task.projectName
+              ? `Task in ${task.projectName}`
+              : "Agency overhead task"
+        }
         action={(task.canEdit || task.canDelete) && <TaskActions task={task} />}
       />
       <div className="grid gap-8 lg:grid-cols-[2fr_1fr]">
@@ -678,7 +780,7 @@ export function TaskDetail({ slug }: { slug: string }) {
         <Section title="Details">
           <dl className="divide-y text-sm">
             <Detail label="Status">
-              {task.canEdit ? (
+              {task.canEdit && !task.subtasks.length ? (
                 <Select value={task.status} onValueChange={(v) => void changeStatus(v)}>
                   <SelectTrigger className="h-8 w-36" aria-label="Change status">
                     <SelectValue />
@@ -701,7 +803,23 @@ export function TaskDetail({ slug }: { slug: string }) {
             <Detail label="Due date">
               <DueDate task={task} />
             </Detail>
-            <Detail label="Assigned to">{task.assigneeName || "Unassigned"}</Detail>
+            {task.parent ? (
+              <Detail label="Part of">
+                <Link
+                  to="/tasks/$taskSlug"
+                  params={{ taskSlug: task.parent }}
+                  className="hover:text-primary"
+                >
+                  {task.parentTitle}
+                </Link>
+              </Detail>
+            ) : null}
+            <Detail label="Assigned to">
+              <Assignees task={task} />
+            </Detail>
+            <Detail label="Tags">
+              {task.tags.length ? <TagList tags={task.tags} className="justify-end" /> : "None"}
+            </Detail>
             <Detail label="Project">
               <ProjectLink task={task} />
             </Detail>
@@ -714,7 +832,91 @@ export function TaskDetail({ slug }: { slug: string }) {
           </dl>
         </Section>
       </div>
+      {!task.parent && <Subtasks task={task} />}
     </>
+  );
+}
+
+/** A task's sub-tasks, each with its own assignee, status and deadline. */
+function Subtasks({ task }: { task: TaskItem }) {
+  const { rescheduleTask } = useMiniOps();
+  const done = task.subtasks.filter((s) => s.status === "Done").length;
+
+  async function reschedule(slug: string, date: string) {
+    try {
+      await rescheduleTask(slug, date);
+      toast.success("Deadline updated");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't change the deadline.");
+    }
+  }
+
+  return (
+    <Section
+      title="Sub-tasks"
+      subtitle={
+        task.subtasks.length
+          ? `${done} of ${task.subtasks.length} done`
+          : "Break this task down, or give each person their own part."
+      }
+      action={
+        task.canEdit && (
+          <TaskFormDialog parent={task.slug} project={task.project ?? ""}>
+            <Button variant="outline" size="sm">
+              <Plus /> Add sub-task
+            </Button>
+          </TaskFormDialog>
+        )
+      }
+      className="mt-8"
+    >
+      {task.subtasks.length > 0 && (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Sub-task</TableHead>
+              <TableHead>Assigned to</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Due date</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {task.subtasks.map((s) => (
+              <TableRow key={s.slug} className={s.isOverdue ? "bg-danger-soft/30" : undefined}>
+                <TableCell>
+                  <Link
+                    to="/tasks/$taskSlug"
+                    params={{ taskSlug: s.slug }}
+                    className="font-medium hover:text-primary"
+                  >
+                    {s.title}
+                  </Link>
+                </TableCell>
+                <TableCell>
+                  {s.assigneeName || <span className="text-muted-foreground">Unassigned</span>}
+                </TableCell>
+                <TableCell>
+                  <Status>{s.status}</Status>
+                </TableCell>
+                <TableCell className="w-52">
+                  {task.canEdit ? (
+                    <DateInput
+                      aria-label={`Due date for ${s.title}`}
+                      value={s.dueDate ?? ""}
+                      onChange={(v) => v !== (s.dueDate ?? "") && void reschedule(s.slug, v)}
+                    />
+                  ) : s.dueDate ? (
+                    formatDisplayDate(s.dueDate)
+                  ) : (
+                    "No due date"
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+    </Section>
   );
 }
 
@@ -770,6 +972,8 @@ function TaskActions({ task }: { task: TaskItem }) {
 /** Three-dot menu on a task table row: edit or delete without opening the task. */
 function TaskRowActions({ task }: { task: TaskItem }) {
   const [editing, setEditing] = useState(false);
+  const [addingSub, setAddingSub] = useState(false);
+  const canAddSub = task.canEdit && !task.parent;
   const [confirming, setConfirming] = useState(false);
   if (!task.canEdit && !task.canDelete) return null;
 
@@ -792,6 +996,11 @@ function TaskRowActions({ task }: { task: TaskItem }) {
               <Pencil /> Edit task
             </DropdownMenuItem>
           )}
+          {canAddSub && (
+            <DropdownMenuItem onSelect={() => setAddingSub(true)}>
+              <ListPlus /> Add sub-task
+            </DropdownMenuItem>
+          )}
           {task.canDelete && (
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
@@ -803,6 +1012,14 @@ function TaskRowActions({ task }: { task: TaskItem }) {
         </DropdownMenuContent>
       </DropdownMenu>
       {task.canEdit && <TaskFormDialog task={task} open={editing} onOpenChange={setEditing} />}
+      {canAddSub && (
+        <TaskFormDialog
+          parent={task.slug}
+          project={task.project ?? ""}
+          open={addingSub}
+          onOpenChange={setAddingSub}
+        />
+      )}
       <DeleteTaskDialog task={task} open={confirming} onOpenChange={setConfirming} />
     </>
   );
@@ -842,7 +1059,9 @@ function DeleteTaskDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Delete “{task.title}”?</AlertDialogTitle>
           <AlertDialogDescription>
-            This permanently removes the task. This can't be undone.
+            {task.subtasks.length
+              ? `This permanently removes the task and its ${task.subtasks.length} sub-task${task.subtasks.length === 1 ? "" : "s"}. This can't be undone.`
+              : "This permanently removes the task. This can't be undone."}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -867,41 +1086,73 @@ const toInput = (t?: TaskItem, defaults?: Partial<TaskInput>): TaskInput => ({
   title: t?.title ?? "",
   description: t?.description ?? "",
   project: t ? (t.project ?? "") : (defaults?.project ?? ""),
-  assignee: t?.assignee ? String(t.assignee) : "",
+  assignees: t?.assignee ? [String(t.assignee)] : [],
+  dueDates: {},
+  parent: t ? (t.parent ?? "") : (defaults?.parent ?? ""),
+  tags: t?.tags ?? [],
   priority: t?.priority ?? "Medium",
   status: t?.status ?? "To Do",
   dueDate: t?.dueDate ?? "",
 });
 
 /**
- * Create (no `task`) or edit a task. `children` is the trigger; `project` presets the project slug.
- * Pass `open`/`onOpenChange` instead of `children` to open it from elsewhere (e.g. a menu item).
+ * Create (no `task`) or edit a task. `children` is the trigger; `project` and `parent` preset the
+ * project and parent task slugs. Pass `open`/`onOpenChange` instead of `children` to open it from
+ * elsewhere (e.g. a menu item).
  */
 export function TaskFormDialog({
   task,
   project,
+  parent,
   children,
   open: openProp,
   onOpenChange: onOpenChangeProp,
 }: {
   task?: TaskItem;
   project?: string;
+  parent?: string;
   children?: ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
-  const { saveTask, uploadTaskImage, projects, members } = useMiniOps();
+  const { saveTask, uploadTaskImage, projects, members, taskList, activeWorkspace, user } =
+    useMiniOps();
   const [innerOpen, setInnerOpen] = useState(false);
   const controlled = openProp !== undefined;
   const open = controlled ? openProp : innerOpen;
-  const [form, setForm] = useState<TaskInput>(() => toInput(task, { project: project ?? "" }));
+  const [form, setForm] = useState<TaskInput>(() =>
+    toInput(task, { project: project ?? "", parent: parent ?? "" }),
+  );
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const set = <K extends keyof TaskInput>(key: K, value: TaskInput[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
+  // Same rule as the API: employers, or a project manager on a project they manage.
+  const canAssignMany =
+    activeWorkspace.role === ROLE_LABELS.employer ||
+    (activeWorkspace.role === ROLE_LABELS.project_manager &&
+      !!user &&
+      !!projects.find((p) => p.id === form.project)?.managers?.includes(user.id));
+  const people = members.map((m) => ({ value: String(m.id), label: m.name, hint: m.role }));
+  // Several people only when creating: each gets their own sub-task.
+  const multiple = !task && form.assignees.length > 1;
+  const hasSubtasks = !!task?.subtasks.length;
+  // Sub-tasks go one level deep, under a task that isn't itself a sub-task.
+  const parentOptions = taskList
+    .filter((t) => !t.parent && t.slug !== task?.slug)
+    .map((t) => ({ value: t.slug, label: t.title, ...(t.projectName && { hint: t.projectName }) }));
+  const parentTitle = taskList.find((t) => t.slug === form.parent)?.title;
+  function chooseParent(slug: string) {
+    const p = taskList.find((t) => t.slug === slug);
+    // A sub-task usually belongs to its parent's project.
+    setForm((f) => ({ ...f, parent: slug, project: f.project || p?.project || "" }));
+  }
+  const nameOf = (id: string) => people.find((p) => p.value === id)?.label ?? "Someone";
+  const setDueFor = (id: string, date: string) =>
+    setForm((f) => ({ ...f, dueDates: { ...f.dueDates, [id]: date } }));
 
   function reset() {
-    setForm(toInput(task, { project: project ?? "" }));
+    setForm(toInput(task, { project: project ?? "", parent: parent ?? "" }));
     setError("");
   }
 
@@ -929,7 +1180,13 @@ export function TaskFormDialog({
         { ...form, title: form.title.trim(), description: form.description.trim() },
         task?.slug,
       );
-      toast.success(task ? "Task updated" : "Task created");
+      toast.success(
+        form.assignees.length > 1
+          ? `${task ? "Task updated" : "Task created"} for ${form.assignees.length} people`
+          : task
+            ? "Task updated"
+            : "Task created",
+      );
       onOpenChange(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't save the task.");
@@ -951,8 +1208,14 @@ export function TaskFormDialog({
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <form onSubmit={submit} noValidate>
           <DialogHeader>
-            <DialogTitle>{task ? "Edit task" : "Add task"}</DialogTitle>
-            <DialogDescription>Saved to your workspace.</DialogDescription>
+            <DialogTitle>
+              {task ? "Edit task" : form.parent ? "Add sub-task" : "Add task"}
+            </DialogTitle>
+            <DialogDescription>
+              {form.parent && parentTitle
+                ? `A sub-task of “${parentTitle}”.`
+                : "Saved to your workspace."}
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-x-4 gap-y-5 py-5 sm:grid-cols-2">
             <div className="sm:col-span-2">
@@ -988,19 +1251,53 @@ export function TaskFormDialog({
                 onChange={(v) => set("project", v)}
               />,
             )}
-            {field(
-              "task-assignee",
-              "Assigned to",
-              <SearchableSelect
-                id="task-assignee"
-                clearable
-                placeholder="Unassigned"
-                searchPlaceholder="Search people…"
-                options={members.map((m) => ({ value: String(m.id), label: m.name, hint: m.role }))}
-                value={form.assignee}
-                onChange={(v) => set("assignee", v)}
-              />,
-            )}
+            <div>
+              <Label htmlFor="task-parent">Parent task</Label>
+              <div className="mt-1.5">
+                <SearchableSelect
+                  id="task-parent"
+                  clearable
+                  placeholder={hasSubtasks ? "Has its own sub-tasks" : "None (a main task)"}
+                  searchPlaceholder="Search tasks…"
+                  options={parentOptions}
+                  value={form.parent ?? ""}
+                  onChange={chooseParent}
+                  className={hasSubtasks ? "pointer-events-none opacity-60" : ""}
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="task-assignee">Assigned to</Label>
+              <div className="mt-1.5">
+                {canAssignMany && !task ? (
+                  <SearchableMultiSelect
+                    id="task-assignee"
+                    placeholder="Unassigned"
+                    searchPlaceholder="Search people…"
+                    options={people}
+                    value={form.assignees}
+                    onChange={(v) => set("assignees", v)}
+                  />
+                ) : (
+                  <SearchableSelect
+                    id="task-assignee"
+                    clearable
+                    placeholder="Unassigned"
+                    searchPlaceholder="Search people…"
+                    options={people}
+                    value={form.assignees[0] ?? ""}
+                    onChange={(v) => set("assignees", v ? [v] : [])}
+                  />
+                )}
+              </div>
+              {multiple && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {form.parent
+                    ? "Each person gets their own sub-task."
+                    : "This becomes a main task, and each person gets their own sub-task."}
+                </p>
+              )}
+            </div>
             {field(
               "task-priority",
               "Priority",
@@ -1011,20 +1308,50 @@ export function TaskFormDialog({
                 onChange={(v) => set("priority", (v || "Medium") as TaskInput["priority"])}
               />,
             )}
-            {field(
-              "task-status",
-              "Status",
-              <SearchableSelect
-                id="task-status"
-                options={[...TASK_STATUSES]}
-                value={form.status}
-                onChange={(v) => set("status", (v || "To Do") as TaskInput["status"])}
-              />,
-            )}
+            {hasSubtasks
+              ? field(
+                  "task-status",
+                  "Status",
+                  <p id="task-status" className="pt-2 text-sm text-muted-foreground">
+                    {form.status} · follows its sub-tasks
+                  </p>,
+                )
+              : field(
+                  "task-status",
+                  "Status",
+                  <SearchableSelect
+                    id="task-status"
+                    options={[...TASK_STATUSES]}
+                    value={form.status}
+                    onChange={(v) => set("status", (v || "To Do") as TaskInput["status"])}
+                  />,
+                )}
             {field(
               "task-due",
-              "Due date",
+              multiple ? "Default due date" : "Due date",
               <DateInput id="task-due" value={form.dueDate} onChange={(v) => set("dueDate", v)} />,
+            )}
+            {multiple && (
+              <div className="sm:col-span-2">
+                <Label>Deadline per person</Label>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Leave a date empty to use the default due date.
+                </p>
+                <div className="mt-2 divide-y rounded-xl border">
+                  {form.assignees.map((id) => (
+                    <div key={id} className="flex items-center justify-between gap-3 px-3 py-2">
+                      <span className="min-w-0 truncate text-sm font-medium">{nameOf(id)}</span>
+                      <DateInput
+                        aria-label={`Due date for ${nameOf(id)}`}
+                        className="w-48 shrink-0"
+                        placeholder={form.dueDate ? formatDisplayDate(form.dueDate) : "No due date"}
+                        value={form.dueDates?.[id] ?? ""}
+                        onChange={(v) => setDueFor(id, v)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
             {field(
               "task-description",
@@ -1044,7 +1371,15 @@ export function TaskFormDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={saving}>
-              {saving ? "Saving…" : task ? "Save changes" : "Create task"}
+              {saving
+                ? "Saving…"
+                : task
+                  ? "Save changes"
+                  : multiple
+                    ? `Create for ${form.assignees.length} people`
+                    : form.parent
+                      ? "Add sub-task"
+                      : "Create task"}
             </Button>
           </DialogFooter>
         </form>
