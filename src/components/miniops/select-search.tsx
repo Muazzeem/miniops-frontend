@@ -41,3 +41,35 @@ export function SearchableSelect({id,name,options,value,defaultValue,onChange,pl
       </Command>
     </PopoverContent>
   </Popover>}
+
+type MultiProps={id?:string;options:Option[];value:string[];onChange:(v:string[])=>void;placeholder?:string;searchPlaceholder?:string;className?:string};
+
+/** SearchableSelect for picking several values; stays open while you tick options. */
+export function SearchableMultiSelect({id,options,value,onChange,placeholder='Select…',searchPlaceholder='Search…',className}:MultiProps){
+  const auto=useId();const triggerId=id??auto;const [open,setOpen]=useState(false);
+  const toggle=(v:string)=>onChange(value.includes(v)?value.filter(x=>x!==v):[...value,v]);
+  const chosen=options.filter(o=>value.includes(o.value));
+  return <Popover open={open} onOpenChange={setOpen}>
+    <PopoverTrigger asChild>
+      <button id={triggerId} type="button" role="combobox" aria-expanded={open}
+        className={cn('group inline-flex h-11 w-full items-center gap-2 rounded-[10px] bg-card px-3 text-left text-sm transition-[box-shadow,color] duration-150 shadow-[0_0_0_1px_var(--input)] hover:shadow-[0_0_0_1px_color-mix(in_oklab,var(--primary)_35%,var(--input))] focus-visible:shadow-[0_0_0_1px_var(--primary),0_0_0_4px_color-mix(in_oklab,var(--primary)_14%,transparent)] focus-visible:outline-none sm:h-10',className)}>
+        <span className={cn('min-w-0 flex-1 truncate',!chosen.length&&'text-muted-foreground/70')}>{chosen.length?chosen.map(o=>o.label).join(', '):placeholder}</span>
+        {chosen.length?<span role="button" tabIndex={-1} aria-label="Clear" onClick={e=>{e.stopPropagation();onChange([])}} className="grid size-5 shrink-0 place-items-center rounded text-muted-foreground hover:text-foreground"><X className="size-3.5"/></span>
+          :<ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" strokeWidth={1.75}/>}
+      </button>
+    </PopoverTrigger>
+    <PopoverContent align="start" sideOffset={6} collisionPadding={8} className="w-[max(var(--radix-popover-trigger-width),14rem)] max-w-[calc(100vw-16px)] rounded-2xl border-border/60 p-0 shadow-modal">
+      <Command>
+        {options.length>6&&<CommandInput placeholder={searchPlaceholder}/>}
+        <CommandList className="max-h-72 p-1">
+          <CommandEmpty>No matches found.</CommandEmpty>
+          <CommandGroup>
+            {options.map(o=><CommandItem key={o.value} value={`${o.label} ${o.value}`} onSelect={()=>toggle(o.value)} className="gap-2 rounded-lg px-2.5 py-2.5 data-[selected=true]:bg-primary-soft sm:py-2">
+              <span className="min-w-0 flex-1 truncate">{o.label}{o.hint&&<span className="ml-1.5 text-xs text-muted-foreground">{o.hint}</span>}</span>
+              <Check className={cn('size-4 shrink-0 text-primary',value.includes(o.value)?'opacity-100':'opacity-0')}/>
+            </CommandItem>)}
+          </CommandGroup>
+        </CommandList>
+      </Command>
+    </PopoverContent>
+  </Popover>}

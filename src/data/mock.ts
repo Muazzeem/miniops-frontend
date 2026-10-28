@@ -2,7 +2,7 @@ import type {WorkingDays} from '@/lib/workspace-options';
 export type Health='Healthy'|'Attention'|'At Risk'|'Loss';
 export type Project={id:string;name:string;client:string;status:string;revenue:number;budget:number;cost:number;profit:number;margin:number;progress:number;budgetUsed:number;health:Health;
   // Present for projects loaded from the API.
-  clientSlug?:string|null;team?:number[];projectType?:string;description?:string;startDate?:string|null;endDate?:string|null;createdAt?:string;updatedAt?:string};
+  clientSlug?:string|null;managers?:number[];managerNames?:string[];team?:number[];projectType?:string;description?:string;startDate?:string|null;endDate?:string|null;createdAt?:string;updatedAt?:string};
 export type Client=[string,string,string,number,number];
 export type TeamMember=[string,string,string,number,number,number,number];
 export type Task=[string,string,string,string,string,string];
