@@ -232,51 +232,53 @@ export function Projects() {
                 aria-label="Search projects"
               />
             </div>
-            <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="w-44" aria-label="Status">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                {showMoney && <SelectItem value={NEEDS_ATTENTION}>Needs attention</SelectItem>}
-                {PROJECT_STATUSES.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <SearchableSelect
-              variant="filter"
-              clearable
-              options={clientOptions}
-              value={client}
-              onChange={setClient}
-              placeholder="All clients"
-              searchPlaceholder="Search clients…"
-              aria-label="Client"
-            />
-            <DateRangePicker value={range} onChange={setRange} />
-            <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
-              <SelectTrigger className="w-52" aria-label="Sort">
-                <span className="text-muted-foreground">Sort:</span>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(SORTS)
-                  .filter(([key]) => showMoney || !MONEY_SORTS.has(key))
-                  .map(([key, s]) => (
-                    <SelectItem key={key} value={key}>
-                      {s.label}
+            <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger className="w-44" aria-label="Status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All statuses</SelectItem>
+                  {showMoney && <SelectItem value={NEEDS_ATTENTION}>Needs attention</SelectItem>}
+                  {PROJECT_STATUSES.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
                     </SelectItem>
                   ))}
-              </SelectContent>
-            </Select>
-            {filtered && (
-              <Button variant="ghost" onClick={clearFilters}>
-                Clear filters
-              </Button>
-            )}
+                </SelectContent>
+              </Select>
+              <SearchableSelect
+                variant="filter"
+                clearable
+                options={clientOptions}
+                value={client}
+                onChange={setClient}
+                placeholder="All clients"
+                searchPlaceholder="Search clients…"
+                aria-label="Client"
+              />
+              <DateRangePicker value={range} onChange={setRange} />
+              <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+                <SelectTrigger className="w-52" aria-label="Sort">
+                  <span className="text-muted-foreground">Sort:</span>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(SORTS)
+                    .filter(([key]) => showMoney || !MONEY_SORTS.has(key))
+                    .map(([key, s]) => (
+                      <SelectItem key={key} value={key}>
+                        {s.label}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              {filtered && (
+                <Button variant="ghost" onClick={clearFilters}>
+                  Clear filters
+                </Button>
+              )}
+            </div>
           </div>
           {rows.length === 0 ? (
             <div className="rounded-2xl bg-card p-10 text-center shadow-card">
