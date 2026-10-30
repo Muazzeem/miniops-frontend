@@ -859,7 +859,7 @@ const RANGES = ["today", "week", "month", "all", "overdue"] as const;
 export function TasksPage() {
   const { tasks, projects, can, openTask, editTask, setTaskStatus } = useEmployee();
   const [view, setView] = useState<"list" | "board" | "calendar">("list");
-  const [range, setRange] = useState<(typeof RANGES)[number]>("all");
+  const [range, setRange] = useState<(typeof RANGES)[number]>("week");
   const [project, setProject] = useState("all");
   const [status, setStatus] = useState("all");
   const [priority, setPriority] = useState("all");
