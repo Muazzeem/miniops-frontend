@@ -148,10 +148,8 @@ export type TaskInput = {
   title: string;
   description: string;
   project: string;
-  /** User IDs. Two or more (new tasks only) gives each person their own sub-task. */
-  assignees: string[];
-  /** Per-person deadlines ({user ID: date}) that differ from `dueDate`. */
-  dueDates?: Record<string, string>;
+  /** User ID, "" for unassigned. */
+  assignee: string;
   /** Parent task slug, "" for none; left out to keep it unchanged. */
   parent?: string;
   tags: string[];
@@ -500,14 +498,7 @@ const toApiTask = (i: TaskInput): TaskWrite => ({
   description: i.description,
   project: i.project || null,
   ...(i.parent !== undefined ? { parent: i.parent || null } : {}),
-  ...(i.assignees.length > 1
-    ? {
-        assignees: i.assignees.map(Number),
-        due_dates: Object.fromEntries(
-          Object.entries(i.dueDates ?? {}).filter(([id, date]) => date && i.assignees.includes(id)),
-        ),
-      }
-    : { assignee: i.assignees[0] ? Number(i.assignees[0]) : null }),
+  assignee: i.assignee ? Number(i.assignee) : null,
   tags: i.tags,
   priority: i.priority,
   status: i.status,

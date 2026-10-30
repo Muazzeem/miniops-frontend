@@ -636,15 +636,7 @@ export type TaskWrite = Partial<
     | "status"
     | "due_date"
   >
-> & {
-  /**
-   * New tasks only; overrides `assignee`. Two or more people each get their own sub-task:
-   * of this new task (which then has no assignee), or with `parent` set, of that task.
-   */
-  assignees?: number[];
-  /** With `assignees`: {user ID: date} for people whose deadline differs from `due_date`. */
-  due_dates?: Record<string, string>;
-};
+>;
 
 export const tasksApi = {
   list: (workspaceId: number) => listAll<ApiTask>(`/workspaces/${workspaceId}/tasks/`),

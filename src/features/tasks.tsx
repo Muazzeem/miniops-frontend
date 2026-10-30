@@ -71,7 +71,7 @@ import {
 import { MobileCard, MobileField, PageHeader, Status } from "@/components/miniops/core";
 import { Section } from "@/components/miniops/forms";
 import { RichText, RichTextEditor } from "@/components/miniops/rich-text";
-import { SearchableMultiSelect, SearchableSelect } from "@/components/miniops/select-search";
+import { SearchableSelect } from "@/components/miniops/select-search";
 import { TagList } from "@/components/miniops/tag-input";
 import {
   DateInput,
@@ -80,7 +80,7 @@ import {
   toIso,
   type IsoRange,
 } from "@/components/miniops/date-time";
-import { ROLE_LABELS, TASK_PRIORITIES, TASK_STATUSES, type TaskStatus } from "@/lib/api";
+import { TASK_PRIORITIES, TASK_STATUSES, type TaskStatus } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { ErrorState, NoAccess, SignInPrompt } from "./projects";
 import { useMiniOps, useTaskTags, type TaskInput, type TaskItem } from "./store";
@@ -1139,8 +1139,7 @@ const toInput = (t?: TaskItem, defaults?: Partial<TaskInput>): TaskInput => ({
   title: t?.title ?? "",
   description: t?.description ?? "",
   project: t ? (t.project ?? "") : (defaults?.project ?? ""),
-  assignees: t?.assignee ? [String(t.assignee)] : [],
-  dueDates: {},
+  assignee: t?.assignee ? String(t.assignee) : "",
   parent: t ? (t.parent ?? "") : (defaults?.parent ?? ""),
   tags: t?.tags ?? [],
   priority: t?.priority ?? "Medium",
@@ -1168,8 +1167,7 @@ export function TaskFormDialog({
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
-  const { saveTask, uploadTaskImage, projects, members, taskList, activeWorkspace, user } =
-    useMiniOps();
+  const { saveTask, uploadTaskImage, projects, members, taskList } = useMiniOps();
   const [innerOpen, setInnerOpen] = useState(false);
   const controlled = openProp !== undefined;
   const open = controlled ? openProp : innerOpen;
@@ -1180,15 +1178,7 @@ export function TaskFormDialog({
   const [saving, setSaving] = useState(false);
   const set = <K extends keyof TaskInput>(key: K, value: TaskInput[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
-  // Same rule as the API: employers, or a project manager on a project they manage.
-  const canAssignMany =
-    activeWorkspace.role === ROLE_LABELS.employer ||
-    (activeWorkspace.role === ROLE_LABELS.project_manager &&
-      !!user &&
-      !!projects.find((p) => p.id === form.project)?.managers?.includes(user.id));
   const people = members.map((m) => ({ value: String(m.id), label: m.name, hint: m.role }));
-  // Several people only when creating: each gets their own sub-task.
-  const multiple = !task && form.assignees.length > 1;
   const hasSubtasks = !!task?.subtasks.length;
   // Sub-tasks go one level deep, under a task that isn't itself a sub-task.
   const parentOptions = taskList
@@ -1200,9 +1190,6 @@ export function TaskFormDialog({
     // A sub-task usually belongs to its parent's project.
     setForm((f) => ({ ...f, parent: slug, project: f.project || p?.project || "" }));
   }
-  const nameOf = (id: string) => people.find((p) => p.value === id)?.label ?? "Someone";
-  const setDueFor = (id: string, date: string) =>
-    setForm((f) => ({ ...f, dueDates: { ...f.dueDates, [id]: date } }));
 
   function reset() {
     setForm(toInput(task, { project: project ?? "", parent: parent ?? "" }));
@@ -1233,13 +1220,7 @@ export function TaskFormDialog({
         { ...form, title: form.title.trim(), description: form.description.trim() },
         task?.slug,
       );
-      toast.success(
-        form.assignees.length > 1
-          ? `${task ? "Task updated" : "Task created"} for ${form.assignees.length} people`
-          : task
-            ? "Task updated"
-            : "Task created",
-      );
+      toast.success(task ? "Task updated" : "Task created");
       onOpenChange(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't save the task.");
@@ -1319,38 +1300,25 @@ export function TaskFormDialog({
                 />
               </div>
             </div>
-            <div>
-              <Label htmlFor="task-assignee">Assigned to</Label>
-              <div className="mt-1.5">
-                {canAssignMany && !task ? (
-                  <SearchableMultiSelect
-                    id="task-assignee"
-                    placeholder="Unassigned"
-                    searchPlaceholder="Search people…"
-                    options={people}
-                    value={form.assignees}
-                    onChange={(v) => set("assignees", v)}
-                  />
-                ) : (
-                  <SearchableSelect
-                    id="task-assignee"
-                    clearable
-                    placeholder="Unassigned"
-                    searchPlaceholder="Search people…"
-                    options={people}
-                    value={form.assignees[0] ?? ""}
-                    onChange={(v) => set("assignees", v ? [v] : [])}
-                  />
-                )}
-              </div>
-              {multiple && (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {form.parent
-                    ? "Each person gets their own sub-task."
-                    : "This becomes a main task, and each person gets their own sub-task."}
+            {field(
+              "task-assignee",
+              "Assigned to",
+              hasSubtasks ? (
+                <p id="task-assignee" className="pt-2 text-sm text-muted-foreground">
+                  People are on its sub-tasks
                 </p>
-              )}
-            </div>
+              ) : (
+                <SearchableSelect
+                  id="task-assignee"
+                  clearable
+                  placeholder="Unassigned"
+                  searchPlaceholder="Search people…"
+                  options={people}
+                  value={form.assignee}
+                  onChange={(v) => set("assignee", v)}
+                />
+              ),
+            )}
             {field(
               "task-priority",
               "Priority",
@@ -1381,30 +1349,8 @@ export function TaskFormDialog({
                 )}
             {field(
               "task-due",
-              multiple ? "Default due date" : "Due date",
+              "Due date",
               <DateInput id="task-due" value={form.dueDate} onChange={(v) => set("dueDate", v)} />,
-            )}
-            {multiple && (
-              <div className="sm:col-span-2">
-                <Label>Deadline per person</Label>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  Leave a date empty to use the default due date.
-                </p>
-                <div className="mt-2 divide-y rounded-xl border">
-                  {form.assignees.map((id) => (
-                    <div key={id} className="flex items-center justify-between gap-3 px-3 py-2">
-                      <span className="min-w-0 truncate text-sm font-medium">{nameOf(id)}</span>
-                      <DateInput
-                        aria-label={`Due date for ${nameOf(id)}`}
-                        className="w-48 shrink-0"
-                        placeholder={form.dueDate ? formatDisplayDate(form.dueDate) : "No due date"}
-                        value={form.dueDates?.[id] ?? ""}
-                        onChange={(v) => setDueFor(id, v)}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
             )}
             {field(
               "task-description",
@@ -1428,11 +1374,9 @@ export function TaskFormDialog({
                 ? "Saving…"
                 : task
                   ? "Save changes"
-                  : multiple
-                    ? `Create for ${form.assignees.length} people`
-                    : form.parent
-                      ? "Add sub-task"
-                      : "Create task"}
+                  : form.parent
+                    ? "Add sub-task"
+                    : "Create task"}
             </Button>
           </DialogFooter>
         </form>
