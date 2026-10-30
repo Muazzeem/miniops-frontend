@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
   FolderKanban,
+  Grid2X2,
+  LayoutList,
   Lock,
   LogIn,
   MoreHorizontal,
@@ -130,6 +132,7 @@ export function Projects() {
   const [client, setClient] = useState("");
   const [range, setRange] = useState<IsoRange>({ from: "", to: "" });
   const [sort, setSort] = useState<SortKey>("recent");
+  const [view, setView] = useState<"grid" | "list">("grid");
 
   const clientOptions = useMemo(
     () => [...new Set(projects.map((p) => p.client).filter(Boolean))].sort(),
@@ -278,6 +281,24 @@ export function Projects() {
                   Clear filters
                 </Button>
               )}
+              <div className="flex rounded-md border border-border p-0.5">
+                <Button
+                  size="icon"
+                  variant={view === "grid" ? "secondary" : "ghost"}
+                  onClick={() => setView("grid")}
+                  aria-label="Grid view"
+                >
+                  <Grid2X2 />
+                </Button>
+                <Button
+                  size="icon"
+                  variant={view === "list" ? "secondary" : "ghost"}
+                  onClick={() => setView("list")}
+                  aria-label="List view"
+                >
+                  <LayoutList />
+                </Button>
+              </div>
             </div>
           </div>
           {rows.length === 0 ? (
@@ -287,12 +308,89 @@ export function Projects() {
                 Clear filters
               </Button>
             </div>
+          ) : view === "grid" ? (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {rows.map((project) => (
+                <ProjectCard key={project.id} project={project} showMoney={showMoney} />
+              ))}
+            </div>
           ) : (
             <ProjectsTable rows={rows} showMoney={showMoney} />
           )}
         </>
       )}
     </>
+  );
+}
+
+function ProjectCard({ project, showMoney }: { project: Project; showMoney: boolean }) {
+  const { taskList, can } = useMiniOps();
+  const showTasks = can("tasks");
+
+  // Open tasks for this project, and the earliest due date among them.
+  const openTasks = taskList.filter(
+    (task) => task.project === project.id && task.status !== "Done",
+  );
+  const dueDates = openTasks
+    .map((task) => task.dueDate)
+    .filter((date): date is string => Boolean(date))
+    .sort();
+  const nextDeadline = dueDates[0];
+
+  return (
+    <Link
+      to="/projects/$projectSlug"
+      params={{ projectSlug: project.id }}
+      className="flex flex-col rounded-2xl bg-card p-5 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <span className="grid size-10 shrink-0 place-items-center rounded-md bg-secondary text-sm font-semibold">
+          {project.name.charAt(0).toUpperCase()}
+        </span>
+        <Status>{project.status}</Status>
+      </div>
+      <h2 className="mt-5 truncate text-base font-semibold">{project.name}</h2>
+      <p className="mt-1 truncate text-sm text-muted-foreground">{project.client || "No client"}</p>
+      <dl className="mt-5 grid grid-cols-2 gap-4 rounded-xl bg-secondary/60 p-3">
+        {showTasks && (
+          <>
+            <MobileField label="Open tasks">{openTasks.length} open</MobileField>
+            <MobileField label="Next deadline">
+              {nextDeadline ? formatDisplayDate(nextDeadline) : "None"}
+            </MobileField>
+          </>
+        )}
+        {showMoney && (
+          <>
+            <MobileField label="Revenue">{money(project.revenue)}</MobileField>
+            <MobileField label="Margin">{project.margin}%</MobileField>
+          </>
+        )}
+        <MobileField label="Manager">
+          {project.managerNames?.join(", ") || "Not assigned"}
+        </MobileField>
+        <MobileField label="Due">
+          {project.endDate ? formatDisplayDate(project.endDate) : "Not set"}
+        </MobileField>
+        {showMoney && <MobileField label="Budget used">{project.budgetUsed}%</MobileField>}
+      </dl>
+      <div className="mt-4 flex justify-between text-xs">
+        <span className="text-muted-foreground">Progress</span>
+        <span className="font-semibold">{project.progress}%</span>
+      </div>
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full rounded-full bg-primary"
+          style={{ width: `${Math.min(project.progress, 100)}%` }}
+        />
+      </div>
+      {showMoney && (
+        <div className="mt-4 flex items-center justify-between text-xs">
+          <span className="text-muted-foreground">Health</span>
+          <Status>{project.health}</Status>
+        </div>
+      )}
+    </Link>
   );
 }
 
