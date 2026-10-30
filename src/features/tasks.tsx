@@ -8,6 +8,8 @@ import {
 } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
+  ArrowDown,
+  ArrowUp,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
@@ -360,6 +362,25 @@ function ProjectLink({ task }: { task: TaskItem }) {
   );
 }
 
+type DueDateOrder = "ascending" | "descending";
+
+/** Sorts tasks by due date. Tasks without a due date always go to the bottom. */
+function sortByDueDate(tasks: TaskItem[], order: DueDateOrder) {
+  const tasksWithDate = tasks.filter((task) => task.dueDate);
+  const tasksWithoutDate = tasks.filter((task) => !task.dueDate);
+
+  const sortedTasks = [...tasksWithDate].sort((a, b) => {
+    const dateA = a.dueDate ?? "";
+    const dateB = b.dueDate ?? "";
+    if (order === "ascending") {
+      return dateA.localeCompare(dateB);
+    }
+    return dateB.localeCompare(dateA);
+  });
+
+  return [...sortedTasks, ...tasksWithoutDate];
+}
+
 /** Shared by the Tasks page and a project's Tasks tab. Tasks with sub-tasks expand to show them. */
 export function TaskTable({
   rows,
@@ -421,6 +442,17 @@ function TaskDesktopTable({ rows, showProject }: { rows: TaskItem[]; showProject
     });
   const subtasksOf = (t: TaskItem) =>
     t.subtasks.flatMap((s) => taskList.find((x) => x.slug === s.slug) ?? []);
+
+  const [dueDateOrder, setDueDateOrder] = useState<DueDateOrder>("ascending");
+  const sortedRows = sortByDueDate(rows, dueDateOrder);
+
+  function toggleDueDateOrder() {
+    if (dueDateOrder === "ascending") {
+      setDueDateOrder("descending");
+    } else {
+      setDueDateOrder("ascending");
+    }
+  }
 
   const row = (t: TaskItem, nested: boolean) => (
     <TableRow
@@ -487,13 +519,31 @@ function TaskDesktopTable({ rows, showProject }: { rows: TaskItem[]; showProject
           {showProject && <TableHead>Project</TableHead>}
           <TableHead>Assigned to</TableHead>
           <TableHead>Priority</TableHead>
-          <TableHead>Due date</TableHead>
+          <TableHead aria-sort={dueDateOrder}>
+            <button
+              type="button"
+              onClick={toggleDueDateOrder}
+              className="inline-flex items-center gap-1 hover:text-foreground"
+              title={
+                dueDateOrder === "ascending"
+                  ? "Showing earliest due date first"
+                  : "Showing latest due date first"
+              }
+            >
+              Due date
+              {dueDateOrder === "ascending" ? (
+                <ArrowUp className="size-3.5" />
+              ) : (
+                <ArrowDown className="size-3.5" />
+              )}
+            </button>
+          </TableHead>
           <TableHead>Status</TableHead>
           <TableHead className="w-12 text-right">Action</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {rows.flatMap((t) => [
+        {sortedRows.flatMap((t) => [
           row(t, false),
           ...(expanded.has(t.slug) ? subtasksOf(t).map((c) => row(c, true)) : []),
         ])}

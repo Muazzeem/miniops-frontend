@@ -235,68 +235,70 @@ export function Projects() {
                 aria-label="Search projects"
               />
             </div>
-            <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="w-44" aria-label="Status">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                {showMoney && <SelectItem value={NEEDS_ATTENTION}>Needs attention</SelectItem>}
-                {PROJECT_STATUSES.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <SearchableSelect
-              variant="filter"
-              clearable
-              options={clientOptions}
-              value={client}
-              onChange={setClient}
-              placeholder="All clients"
-              searchPlaceholder="Search clients…"
-              aria-label="Client"
-            />
-            <DateRangePicker value={range} onChange={setRange} />
-            <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
-              <SelectTrigger className="w-52" aria-label="Sort">
-                <span className="text-muted-foreground">Sort:</span>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(SORTS)
-                  .filter(([key]) => showMoney || !MONEY_SORTS.has(key))
-                  .map(([key, s]) => (
-                    <SelectItem key={key} value={key}>
-                      {s.label}
+            <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger className="w-44" aria-label="Status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All statuses</SelectItem>
+                  {showMoney && <SelectItem value={NEEDS_ATTENTION}>Needs attention</SelectItem>}
+                  {PROJECT_STATUSES.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
                     </SelectItem>
                   ))}
-              </SelectContent>
-            </Select>
-            {filtered && (
-              <Button variant="ghost" onClick={clearFilters}>
-                Clear filters
-              </Button>
-            )}
-            <div className="ml-auto flex rounded-md border border-border p-0.5">
-              <Button
-                size="icon"
-                variant={view === "grid" ? "secondary" : "ghost"}
-                onClick={() => setView("grid")}
-                aria-label="Grid view"
-              >
-                <Grid2X2 />
-              </Button>
-              <Button
-                size="icon"
-                variant={view === "list" ? "secondary" : "ghost"}
-                onClick={() => setView("list")}
-                aria-label="List view"
-              >
-                <LayoutList />
-              </Button>
+                </SelectContent>
+              </Select>
+              <SearchableSelect
+                variant="filter"
+                clearable
+                options={clientOptions}
+                value={client}
+                onChange={setClient}
+                placeholder="All clients"
+                searchPlaceholder="Search clients…"
+                aria-label="Client"
+              />
+              <DateRangePicker value={range} onChange={setRange} />
+              <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+                <SelectTrigger className="w-52" aria-label="Sort">
+                  <span className="text-muted-foreground">Sort:</span>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(SORTS)
+                    .filter(([key]) => showMoney || !MONEY_SORTS.has(key))
+                    .map(([key, s]) => (
+                      <SelectItem key={key} value={key}>
+                        {s.label}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              {filtered && (
+                <Button variant="ghost" onClick={clearFilters}>
+                  Clear filters
+                </Button>
+              )}
+              <div className="flex rounded-md border border-border p-0.5">
+                <Button
+                  size="icon"
+                  variant={view === "grid" ? "secondary" : "ghost"}
+                  onClick={() => setView("grid")}
+                  aria-label="Grid view"
+                >
+                  <Grid2X2 />
+                </Button>
+                <Button
+                  size="icon"
+                  variant={view === "list" ? "secondary" : "ghost"}
+                  onClick={() => setView("list")}
+                  aria-label="List view"
+                >
+                  <LayoutList />
+                </Button>
+              </div>
             </div>
           </div>
           {rows.length === 0 ? (
