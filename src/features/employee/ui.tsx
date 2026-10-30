@@ -63,7 +63,7 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useMiniOps, type TaskInput } from "@/features/store";
+import { useMiniOps, useNeeds, type TaskInput } from "@/features/store";
 import { TagList } from "@/components/miniops/tag-input";
 import { LoginDialog } from "@/features/login-dialog";
 import { TASK_PRIORITIES, TASK_STATUSES, type TaskPriority, type TaskStatus } from "@/lib/api";
@@ -849,6 +849,7 @@ function GlobalSearch({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  useNeeds(...(open ? (["projects", "tasks", "time"] as const) : []));
   const { projects, tasks, timeEntries, openTask } = useEmployee();
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
@@ -961,6 +962,7 @@ function TaskDrawer() {
     teamActivity,
   } = useEmployee();
   const [confirm, setConfirm] = useState(false);
+  const [parentOpen, setParentOpen] = useState(false);
   if (!task) return null;
   const history = [...myActivity, ...teamActivity]
     .filter((a) => a.taskSlug === task.slug)
@@ -969,6 +971,9 @@ function TaskDrawer() {
   const overdue = task.status !== "Done" && !!task.dueDate && task.dueDate < todayIso();
   return (
     <>
+      {task.parent && (
+        <ParentTaskDialog slug={task.parent} open={parentOpen} onOpenChange={setParentOpen} />
+      )}
       <Sheet open={!!task} onOpenChange={(open) => !open && openTask(null)}>
         <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
           <SheetHeader className="pr-8 text-left">
@@ -993,7 +998,16 @@ function TaskDrawer() {
               )}
             </SheetDescription>
             {task.parent && (
-              <p className="mt-2 text-xs text-muted-foreground">Sub-task of “{task.parentTitle}”</p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Sub-task of{" "}
+                <button
+                  type="button"
+                  onClick={() => setParentOpen(true)}
+                  className="font-medium text-primary underline-offset-2 hover:underline"
+                >
+                  {task.parentTitle}
+                </button>
+              </p>
             )}
             <TagList tags={task.tags} className="mt-3" />
           </SheetHeader>
@@ -1110,6 +1124,83 @@ const formFooter =
   "sticky -bottom-4 sm:-bottom-6 -mx-4 sm:-mx-6 border-t bg-card px-4 py-3 sm:px-6 gap-2 [&>button]:h-11 sm:[&>button]:h-10";
 const NO_PROJECT = "__none__";
 
+/** The main task of a sub-task, read-only: its details and who works on its sub-tasks. */
+function ParentTaskDialog({
+  slug,
+  open,
+  onOpenChange,
+}: {
+  slug: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const { taskList } = useMiniOps();
+  const parent = taskList.find((t) => t.slug === slug);
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+        {parent ? (
+          <>
+            <DialogHeader className="text-left">
+              <div className="mb-2 flex gap-2">
+                <PriorityBadge priority={parent.priority} />
+                <StatusBadge status={parent.status} />
+              </div>
+              <DialogTitle className="text-xl">{parent.title}</DialogTitle>
+              <DialogDescription>{parent.projectName || "No project"}</DialogDescription>
+              <TagList tags={parent.tags} className="mt-2" />
+            </DialogHeader>
+            <div className="space-y-5">
+              <RichText
+                html={parent.description}
+                fallback="No description added."
+                className="text-foreground"
+              />
+              <div className="grid grid-cols-2 gap-5 border-y border-border py-4">
+                <Info
+                  label="Due date"
+                  value={parent.dueDate ? formatDue(parent.dueDate) : "No due date"}
+                />
+                <Info
+                  label="Created by"
+                  value={parent.createdByMe ? "You" : parent.createdByName || "—"}
+                />
+              </div>
+              {parent.subtasks.length > 0 && (
+                <div>
+                  <p className="field-label">Sub-tasks</p>
+                  <div className="mt-2 divide-y divide-border rounded-lg border border-border">
+                    {parent.subtasks.map((s) => (
+                      <div
+                        key={s.slug}
+                        className="flex items-center justify-between gap-3 px-3 py-2.5 text-sm"
+                      >
+                        <span className="min-w-0">
+                          <span className="block truncate font-medium">{s.title}</span>
+                          <span className="block text-xs text-muted-foreground">
+                            {s.assigneeName || "Unassigned"}
+                            {s.dueDate && ` · ${formatDue(s.dueDate)}`}
+                          </span>
+                        </span>
+                        <StatusBadge status={s.status} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          <DialogHeader>
+            <DialogTitle>Task not available</DialogTitle>
+            <DialogDescription>This task couldn’t be loaded.</DialogDescription>
+          </DialogHeader>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function TaskForm() {
   const {
     taskFormOpen,
@@ -1119,6 +1210,7 @@ function TaskForm() {
     projects: myProjects,
     me,
   } = useEmployee();
+  useNeeds(...(taskFormOpen ? (["projects", "tasks", "time"] as const) : []));
   const { projects: allProjects, uploadTaskImage } = useMiniOps();
   const editing = !!editingTask;
   // New tasks can go in any project you can see; your own projects come first.
@@ -1305,6 +1397,7 @@ function TimeForm() {
     timeFormProject,
     tasks,
   } = useEmployee();
+  useNeeds(...(timeFormOpen ? (["projects", "tasks"] as const) : []));
   const { projects } = useMiniOps();
   const [draft, setDraft] = useState({
     date: "",

@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouterState } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
   activityApi,
@@ -243,13 +244,27 @@ export function EmployeeProvider({ children }: { children: ReactNode }) {
     team: live,
   };
 
-  const feed = (key: string, query: Parameters<typeof activityApi.list>[1]) => ({
+  // Activity feeds load only where they're shown: the overview, projects, the activity page
+  // and an open task drawer.
+  const pathname = useRouterState({ select: (st) => st.location.pathname });
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
+  const showsActivity =
+    selectedSlug !== null ||
+    pathname === "/employee" ||
+    pathname === "/employee/" ||
+    pathname.startsWith("/employee/projects");
+  const feed = (key: string, show: boolean, query: Parameters<typeof activityApi.list>[1]) => ({
     queryKey: ["activity", apiWid, key],
     queryFn: () => activityApi.list(apiWid!, query),
-    enabled: apiWid !== null,
+    enabled: apiWid !== null && show,
   });
-  const mineQuery = useQuery(feed("mine", { actor: "me", page_size: 60 }));
-  const teamQuery = useQuery(feed("team", { exclude_actor: "me", page_size: 30 }));
+  const mineQuery = useQuery(
+    feed("mine", showsActivity || pathname.startsWith("/employee/activity"), {
+      actor: "me",
+      page_size: 60,
+    }),
+  );
+  const teamQuery = useQuery(feed("team", showsActivity, { exclude_actor: "me", page_size: 30 }));
   const refreshActivity = useCallback(
     () => void queryClient.invalidateQueries({ queryKey: ["activity", apiWid] }),
     [queryClient, apiWid],
@@ -334,7 +349,6 @@ export function EmployeeProvider({ children }: { children: ReactNode }) {
   );
 
   // ---- drawer / forms ----
-  const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const selectedTask = ops.taskList.find((t) => t.slug === selectedSlug) ?? null;
   const [taskFormOpen, setTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskItem | null>(null);

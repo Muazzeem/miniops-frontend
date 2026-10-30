@@ -767,6 +767,8 @@ export type ApiSubscription = {
   amount: number;
   billing_cycle: BillingCycle;
   next_renewal: string;
+  /** One-time purchases only, optional: when a follow-up payment is expected. */
+  next_payment_date: string | null;
   payment_method: string;
   status: SubscriptionStatus;
   project: string | null;
@@ -791,6 +793,7 @@ export type SubscriptionWrite = Pick<
   | "category"
   | "billing_cycle"
   | "next_renewal"
+  | "next_payment_date"
   | "payment_method"
   | "status"
   | "project"

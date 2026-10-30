@@ -888,7 +888,11 @@ function SubscriptionsTab({ canEdit }: { canEdit: boolean }) {
                   {s.status !== "Active"
                     ? `${s.status} · ${s.vendor || s.category}`
                     : isOneTime(s)
-                      ? `${daysUntil(s.nextRenewal) > 0 ? "Due" : "Paid"} ${formatDisplayDate(s.nextRenewal)}`
+                      ? `${daysUntil(s.nextRenewal) > 0 ? "Due" : "Paid"} ${formatDisplayDate(s.nextRenewal)}${
+                          s.nextPaymentDate
+                            ? ` · Next payment ${formatDisplayDate(s.nextPaymentDate)}`
+                            : ""
+                        }`
                       : `Renews ${formatDisplayDate(s.nextRenewal)}`}
                 </small>
                 <span className="mt-5 flex items-center justify-between">
@@ -975,7 +979,13 @@ function SubscriptionSheet({
               {(
                 [
                   ...(isOneTime(s)
-                    ? [["Cost", `${cash(s.amount)} (one time)`]]
+                    ? [
+                        ["Cost", `${cash(s.amount)} (one time)`],
+                        [
+                          "Next payment",
+                          s.nextPaymentDate ? formatDisplayDate(s.nextPaymentDate) : "—",
+                        ],
+                      ]
                     : [
                         ["Cost", `${cash(s.amount)} / ${s.billingCycle.toLowerCase()}`],
                         ["Per month", cash(s.monthlyCost)],
@@ -1114,6 +1124,7 @@ const toSubscriptionWrite = (s?: SubscriptionItem): SubscriptionWrite => ({
   amount: s ? String(s.amount) : "",
   billing_cycle: s?.billingCycle ?? "Monthly",
   next_renewal: s?.nextRenewal ?? "",
+  next_payment_date: s?.nextPaymentDate ?? null,
   payment_method: s?.paymentMethod ?? "",
   status: s?.status ?? "Active",
   project: s?.project ?? null,
@@ -1163,6 +1174,8 @@ function SubscriptionFormDialog({
       found.amount = "Enter an amount of 0 or more.";
     if (!form.next_renewal)
       found.next_renewal = oneTime ? "Pick the payment date." : "Pick the next renewal date.";
+    if (oneTime && form.next_payment_date && form.next_payment_date <= form.next_renewal)
+      found.next_payment_date = "The next payment date must be after the payment date.";
     if (form.invoice_url.trim() && !looksLikeUrl(form.invoice_url.trim()))
       found.invoice_url = "Enter a full link, starting with https://";
     if (looksLikeCardNumber(form.payment_method))
@@ -1178,6 +1191,7 @@ function SubscriptionFormDialog({
           vendor: form.vendor.trim(),
           notes: form.notes.trim(),
           invoice_url: form.invoice_url.trim(),
+          next_payment_date: oneTime ? form.next_payment_date || null : null,
           ...(invoice !== undefined ? { invoice } : {}),
         },
         subscription?.slug,
@@ -1272,6 +1286,19 @@ function SubscriptionFormDialog({
                 onChange={(v) => set("next_renewal", v)}
               />
             </Field>
+            {oneTime && (
+              <Field
+                label="Next payment date (optional)"
+                id="sub-next-payment"
+                error={errors.next_payment_date}
+              >
+                <DateInput
+                  id="sub-next-payment"
+                  value={form.next_payment_date ?? ""}
+                  onChange={(v) => set("next_payment_date", v || null)}
+                />
+              </Field>
+            )}
             <Field label="Category" id="sub-category">
               <SearchableSelect
                 id="sub-category"

@@ -59,7 +59,7 @@ import { money } from "@/data/mock";
 import { fmtHours, parseHours } from "@/lib/hours";
 import { cn } from "@/lib/utils";
 import { ErrorState, NoAccess, SignInPrompt } from "./projects";
-import { useMiniOps, type TimeItem } from "./store";
+import { useMiniOps, useNeeds, type TimeItem } from "./store";
 
 const OVERHEAD = "__overhead__";
 
@@ -608,6 +608,7 @@ export function TimeEntryDialog({
     billable: entry?.billable ?? true,
   });
   const [open, setOpen] = useState(false);
+  useNeeds(...(open ? (["projects", "tasks", "members"] as const) : []));
   const [form, setForm] = useState<Form>(initial);
   const [errors, setErrors] = useState<Partial<Record<keyof Form, string | undefined>>>({});
   const [saving, setSaving] = useState(false);

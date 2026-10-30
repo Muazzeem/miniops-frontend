@@ -220,6 +220,7 @@ export type SubscriptionItem = {
   amount: number;
   billingCycle: ApiSubscription["billing_cycle"];
   nextRenewal: string;
+  nextPaymentDate: string | null;
   paymentMethod: string;
   status: ApiSubscription["status"];
   project: string | null;
@@ -601,6 +602,7 @@ const fromApiSubscription = (s: ApiSubscription): SubscriptionItem => ({
   amount: Number(s.amount),
   billingCycle: s.billing_cycle,
   nextRenewal: s.next_renewal,
+  nextPaymentDate: s.next_payment_date,
   paymentMethod: s.payment_method,
   status: s.status,
   project: s.project,
@@ -736,6 +738,7 @@ const ROUTE_NEEDS: [string, DataKey[]][] = [
   ["/projects/", ["projects", "clients", "tasks", "members"]],
   ["/projects", ["projects", "clients"]],
   ["/tasks", ["tasks", "projects", "members"]],
+  ["/time", ["time", "projects", "members"]],
   ["/clients", ["clients", "projects"]],
   ["/team", ["members", "invitations"]],
   ["/expenses", ["expenses", "projects"]],
@@ -743,6 +746,17 @@ const ROUTE_NEEDS: [string, DataKey[]][] = [
   ["/reports", ["members", "expenses"]],
   ["/billing", ["members", "expenses"]],
   ["/admin", ["members", "expenses"]],
+  // Employee pages: list each one, so "/employee" below only covers the overview.
+  ["/employee/time", ["time", "members"]],
+  ["/employee/tasks", ["tasks", "projects"]],
+  ["/employee/projects/", ["projects", "tasks", "time", "members"]],
+  ["/employee/projects", ["projects", "tasks", "time"]],
+  ["/employee/team", ["members", "tasks"]],
+  ["/employee/activity", []],
+  ["/employee/notifications", []],
+  ["/employee/chat", []],
+  ["/employee/profile", []],
+  ["/employee/settings", []],
   ["/employee", ["tasks", "time", "projects", "members"]],
 ];
 const routeNeeds = (path: string) =>
