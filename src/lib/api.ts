@@ -135,13 +135,10 @@ function errorMessage(data: unknown, fallback: string): string {
 const PUBLIC_AUTH =
   /^\/auth\/(google|register|verify-email|login|token|logout|password\/(forgot|reset))\//;
 
-export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const headers = new Headers(init.headers);
-  headers.set("Accept", "application/json");
-  if (init.body && !(init.body instanceof FormData))
-    headers.set("Content-Type", "application/json");
+/** Send a request with the user's token, renewing it once on a 401. */
+async function send(path: string, init: RequestInit, headers: Headers): Promise<Response> {
   const authed = !PUBLIC_AUTH.test(path);
-  const send = async (token: string | null) => {
+  const attempt = async (token: string | null) => {
     if (token) headers.set("Authorization", `Bearer ${token}`);
     try {
       return await fetch(`${API_URL}${path}`, { ...init, headers });
@@ -150,13 +147,22 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     }
   };
 
-  let response = await send(authed ? await getAccessToken() : null);
+  let response = await attempt(authed ? await getAccessToken() : null);
   if (response.status === 401 && authed && tokenStore.get()) {
     // The access token expired or was revoked: renew once and retry.
     const fresh = await refreshAccess();
-    if (fresh) response = await send(fresh);
+    if (fresh) response = await attempt(fresh);
     if (response.status === 401) tokenStore.clear();
   }
+  return response;
+}
+
+export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const headers = new Headers(init.headers);
+  headers.set("Accept", "application/json");
+  if (init.body && !(init.body instanceof FormData))
+    headers.set("Content-Type", "application/json");
+  const response = await send(path, init, headers);
   if (response.status === 204) return undefined as T;
 
   const data = await response.json().catch(() => undefined);
@@ -168,6 +174,28 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     );
   }
   return data as T;
+}
+
+/** Save a file the API returns (e.g. an Excel export), named as the server suggests. */
+export async function download(path: string, fallbackName: string): Promise<void> {
+  const response = await send(path, {}, new Headers());
+  if (!response.ok) {
+    const data = await response.json().catch(() => undefined);
+    throw new ApiError(
+      response.status,
+      errorMessage(data, `Download failed (${response.status})`),
+      data,
+    );
+  }
+  const name =
+    /filename="?([^";]+)"?/.exec(response.headers.get("Content-Disposition") ?? "")?.[1] ??
+    fallbackName;
+  const url = URL.createObjectURL(await response.blob());
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 /** Paginated list response from every list endpoint (`?page=&page_size=`). */
@@ -638,6 +666,58 @@ export type TaskWrite = Partial<
   >
 >;
 
+/** Server-side task filters (the list endpoint's query params). */
+export type TaskFilters = {
+  search?: string | undefined;
+  /** Project slug, or "none". */
+  project?: string | undefined;
+  /** User ID, "me" or "none". */
+  assignee?: string | undefined;
+  tag?: string | undefined;
+  status?: TaskStatus | undefined;
+  priority?: TaskPriority | undefined;
+  overdue?: "true" | undefined;
+  due_after?: string | undefined;
+  due_before?: string | undefined;
+  completed_after?: string | undefined;
+  completed_before?: string | undefined;
+};
+
+export type TaskReportGroup = "project" | "assignee" | "project_assignee";
+
+export type TaskReportCounts = {
+  total: number;
+  done: number;
+  overdue: number;
+  by_status: Record<TaskStatus, number>;
+  /** Percent of tasks done, one decimal. */
+  completion_rate: number;
+  /** Decimal string; only for members who can see time. */
+  hours?: string;
+};
+
+export type ApiTaskReport = {
+  group_by: TaskReportGroup;
+  totals: TaskReportCounts;
+  /** One per project, member, or member within a project (per `group_by`). */
+  groups: (TaskReportCounts & {
+    /** Project slug / user ID; null for "No project" / "Unassigned". Only the
+     * fields of the grouping are present. */
+    project?: string | null;
+    project_name?: string;
+    assignee?: number | null;
+    assignee_name?: string;
+    /** The names joined, e.g. "Acme Website · Sam Lee". */
+    name: string;
+  })[];
+};
+
+/** Query string from the set values only. */
+const query = (params: Record<string, string | undefined>) =>
+  new URLSearchParams(
+    Object.entries(params).filter((e): e is [string, string] => !!e[1]),
+  ).toString();
+
 export const tasksApi = {
   list: (workspaceId: number) => listAll<ApiTask>(`/workspaces/${workspaceId}/tasks/`),
   create: (workspaceId: number, input: TaskWrite) =>
@@ -646,6 +726,19 @@ export const tasksApi = {
     api<ApiTask>(`/workspaces/${workspaceId}/tasks/${slug}/`, json("PATCH", input)),
   remove: (workspaceId: number, slug: string) =>
     api<void>(`/workspaces/${workspaceId}/tasks/${slug}/`, { method: "DELETE" }),
+  /** Task counts per project or per team member; `filters` as for the list. */
+  report: (workspaceId: number, groupBy: TaskReportGroup, filters: TaskFilters = {}) =>
+    api<ApiTaskReport>(
+      `/workspaces/${workspaceId}/tasks/report/?${query({ ...filters, group_by: groupBy })}`,
+    ),
+  downloadReport: (workspaceId: number, groupBy: TaskReportGroup, filters: TaskFilters = {}) =>
+    download(
+      `/workspaces/${workspaceId}/tasks/report/?${query({ ...filters, group_by: groupBy, download: "true" })}`,
+      `task-report-${groupBy}.xlsx`,
+    ),
+  /** Every matching task (sub-tasks included) as an Excel file. */
+  export: (workspaceId: number, filters: TaskFilters = {}) =>
+    download(`/workspaces/${workspaceId}/tasks/export/?${query(filters)}`, "tasks.xlsx"),
   /** An image for a task description (PNG, JPEG, GIF or WebP, up to 10 MB). */
   uploadImage(workspaceId: number, image: File) {
     const body = new FormData();

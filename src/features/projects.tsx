@@ -76,6 +76,7 @@ import { cash, money, type Project } from "@/data/mock";
 import { membersApi, PROJECT_STATUSES, PROJECT_TYPES } from "@/lib/api";
 import { LoginDialog } from "./login-dialog";
 import { TaskFormDialog, TaskTable } from "./tasks";
+import { TaskExportDialog } from "./task-reports";
 import { ExpenseFormDialog } from "./expenses";
 import { EntriesTable, TimeEntryDialog } from "./time";
 import { fmtHours } from "@/lib/hours";
@@ -533,7 +534,7 @@ function ProjectsDesktopTable({ rows, showMoney }: { rows: Project[]; showMoney:
   );
 }
 
-function ProgressBar({ value }: { value: number }) {
+export function ProgressBar({ value }: { value: number }) {
   return (
     <div className="w-24">
       <div className="h-1.5 bg-muted">
@@ -755,13 +756,18 @@ export function ProjectDetail({ slug }: { slug: string }) {
           <Section
             title="Project tasks"
             action={
-              canEditTasks && (
-                <TaskFormDialog project={p.id}>
-                  <Button size="sm">
-                    <Plus /> New Task
-                  </Button>
-                </TaskFormDialog>
-              )
+              <div className="flex gap-2">
+                {projectTasks.length > 0 && (
+                  <TaskExportDialog filters={{ project: p.id }} pickProjects={false} size="sm" />
+                )}
+                {canEditTasks && (
+                  <TaskFormDialog project={p.id}>
+                    <Button size="sm">
+                      <Plus /> New Task
+                    </Button>
+                  </TaskFormDialog>
+                )}
+              </div>
             }
           >
             {projectTasks.length ? (

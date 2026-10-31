@@ -10,6 +10,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowDown,
   ArrowUp,
+  ChartColumn,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
@@ -80,10 +81,17 @@ import {
   toIso,
   type IsoRange,
 } from "@/components/miniops/date-time";
-import { TASK_PRIORITIES, TASK_STATUSES, type TaskStatus } from "@/lib/api";
+import {
+  TASK_PRIORITIES,
+  TASK_STATUSES,
+  type TaskFilters,
+  type TaskPriority,
+  type TaskStatus,
+} from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { ErrorState, NoAccess, SignInPrompt } from "./projects";
 import { useMiniOps, useTaskTags, type TaskInput, type TaskItem } from "./store";
+import { TaskExportDialog, TaskReport } from "./task-reports";
 
 const NO_PROJECT = "__none__";
 const UNASSIGNED = "__unassigned__";
@@ -111,7 +119,7 @@ function DueDate({ task, className }: { task: TaskItem; className?: string }) {
 export function Tasks() {
   const { taskList, tasksState, projects, members, can, authStatus } = useMiniOps();
   const canEdit = can("tasks", "edit");
-  const [view, setView] = useState<"list" | "board" | "calendar">("list");
+  const [view, setView] = useState<"list" | "board" | "calendar" | "report">("list");
   const [q, setQ] = useState("");
   const [project, setProject] = useState("");
   const [assignee, setAssignee] = useState("");
@@ -145,6 +153,21 @@ export function Tasks() {
       })
       .sort(byUrgency);
   }, [taskList, q, project, assignee, tag, status, priority, range]);
+  // The same filters, as the API takes them (for the report and exports).
+  const serverFilters = useMemo<TaskFilters>(
+    () => ({
+      search: q.trim() || undefined,
+      project: project === NO_PROJECT ? "none" : project || undefined,
+      assignee: assignee === UNASSIGNED ? "none" : assignee || undefined,
+      tag: tag || undefined,
+      status: status === "all" || status === OVERDUE ? undefined : (status as TaskStatus),
+      overdue: status === OVERDUE ? "true" : undefined,
+      priority: priority === "all" ? undefined : (priority as TaskPriority),
+      due_after: range.from || undefined,
+      due_before: range.from ? range.to || range.from : undefined,
+    }),
+    [q, project, assignee, tag, status, priority, range],
+  );
   const allTags = useTaskTags();
   const filtered = Boolean(
     q || project || assignee || tag || status !== "all" || priority !== "all" || range.from,
@@ -182,6 +205,7 @@ export function Tasks() {
                 ["list", "List", <List key="i" />],
                 ["board", "Board", <LayoutGrid key="i" />],
                 ["calendar", "Calendar", <CalendarDays key="i" />],
+                ["report", "Report", <ChartColumn key="i" />],
               ] as const
             ).map(([key, label, icon]) => (
               <Button
@@ -278,7 +302,9 @@ export function Tasks() {
             )}
           </div>
         </div>
-        {rows.length === 0 ? (
+        {view === "report" ? (
+          <TaskReport filters={serverFilters} />
+        ) : rows.length === 0 ? (
           <div className="rounded-2xl bg-card p-10 text-center shadow-card">
             <p className="font-medium">No tasks match these filters.</p>
             <Button variant="link" onClick={clearFilters}>
@@ -302,13 +328,16 @@ export function Tasks() {
         title="Tasks"
         description="What is everyone doing, and what is due?"
         action={
-          canEdit && (
-            <TaskFormDialog>
-              <Button>
-                <Plus /> New Task
-              </Button>
-            </TaskFormDialog>
-          )
+          <div className="flex gap-2">
+            {can("tasks") && taskList.length > 0 && <TaskExportDialog />}
+            {canEdit && (
+              <TaskFormDialog>
+                <Button>
+                  <Plus /> New Task
+                </Button>
+              </TaskFormDialog>
+            )}
+          </div>
         }
       />
       {body()}
