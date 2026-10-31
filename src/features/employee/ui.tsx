@@ -726,7 +726,7 @@ export function StatusBadge({ status }: { status: string }) {
     ? "bg-success-muted text-success"
     : ["In Progress"].includes(status)
       ? "bg-primary-light text-primary-dark"
-      : ["In Review", "On Hold", "Pending"].includes(status)
+      : ["In Review", "Feedback", "On Hold", "Pending"].includes(status)
         ? "bg-warning-muted text-warning"
         : ["Cancelled", "Overdue"].includes(status)
           ? "bg-danger-muted text-danger"

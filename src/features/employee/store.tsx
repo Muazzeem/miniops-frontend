@@ -170,6 +170,7 @@ function describe(e: ApiActivity, myId: number): Activity {
     "task.reopened": `${who} reopened ${target}`,
     "task.started": `${who} started ${target}`,
     "task.in_review": `${who} moved ${target} to review`,
+    "task.feedback": `${who} left feedback on ${target}`,
     "time.logged": `${who} logged ${loggedHours(e.detail)}`,
     "project.created": `${who} created the project ${target}`,
     "project.status": `${who} changed ${target} to ${e.detail.split("→ ")[1] ?? "a new status"}`,

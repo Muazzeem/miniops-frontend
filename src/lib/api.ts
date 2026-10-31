@@ -574,7 +574,7 @@ export const permissionsApi = {
   catalog: () => api<PermissionCatalogEntry[]>("/permissions/"),
 };
 
-export const TASK_STATUSES = ["To Do", "In Progress", "In Review", "Done"] as const;
+export const TASK_STATUSES = ["To Do", "In Progress", "In Review", "Feedback", "Done"] as const;
 export const TASK_PRIORITIES = ["Low", "Medium", "High", "Urgent"] as const;
 export type TaskStatus = (typeof TASK_STATUSES)[number];
 export type TaskPriority = (typeof TASK_PRIORITIES)[number];
@@ -871,6 +871,7 @@ export type ActivityVerb =
   | "task.reopened"
   | "task.started"
   | "task.in_review"
+  | "task.feedback"
   | "time.logged"
   | "project.created"
   | "project.status"

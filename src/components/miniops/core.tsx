@@ -619,7 +619,16 @@ export function Status({ children }: { children: ReactNode }) {
   const t = String(children);
   const c = ["Healthy", "Active", "Done", "Approved", "Responded"].includes(t)
     ? "bg-positive-soft text-positive"
-    : ["Attention", "In Progress", "In Review", "Pending", "Invited", "Waiting", "New"].includes(t)
+    : [
+          "Attention",
+          "In Progress",
+          "In Review",
+          "Feedback",
+          "Pending",
+          "Invited",
+          "Waiting",
+          "New",
+        ].includes(t)
       ? "bg-warning-soft text-warning"
       : ["At Risk", "Urgent", "Suspended", "Overdue"].includes(t)
         ? "bg-danger-soft text-destructive"

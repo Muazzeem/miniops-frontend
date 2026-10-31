@@ -571,7 +571,7 @@ function TaskBoard({ rows, canEdit }: { rows: TaskItem[]; canEdit: boolean }) {
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
       {TASK_STATUSES.map((status) => {
         const column = rows.filter((t) => t.status === status);
         return (

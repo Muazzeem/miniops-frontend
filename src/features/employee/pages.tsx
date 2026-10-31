@@ -1156,7 +1156,7 @@ function TaskBoard({
     setOver(null);
   };
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
       {TASK_STATUSES.map((status) => (
         <section
           key={status}
