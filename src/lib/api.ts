@@ -677,6 +677,8 @@ export type TaskFilters = {
   status?: TaskStatus | undefined;
   priority?: TaskPriority | undefined;
   overdue?: "true" | undefined;
+  /** Leave out Done tasks. */
+  open?: "true" | undefined;
   due_after?: string | undefined;
   due_before?: string | undefined;
   completed_after?: string | undefined;
@@ -1009,6 +1011,13 @@ export const activityApi = {
     return api<Page<ApiActivity>>(`/workspaces/${workspaceId}/activity/?${params}`).then(
       (page) => page.results,
     );
+  },
+  /** A single numbered page, for infinite-scroll feeds. */
+  page: (workspaceId: number, page: number, query: ActivityQuery = {}) => {
+    const params = new URLSearchParams(
+      Object.entries({ page_size: 20, ...query, page }).map(([k, v]) => [k, String(v)]),
+    );
+    return api<Page<ApiActivity>>(`/workspaces/${workspaceId}/activity/?${params}`);
   },
 };
 

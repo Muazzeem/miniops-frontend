@@ -96,6 +96,7 @@ import { TaskExportDialog, TaskReport } from "./task-reports";
 const NO_PROJECT = "__none__";
 const UNASSIGNED = "__unassigned__";
 const OVERDUE = "__overdue__";
+export const PAGE_SIZE = 20;
 const PRIORITY_RANK = { Urgent: 0, High: 1, Medium: 2, Low: 3 } as const;
 
 /** Open work first, by due date (undated last), then priority; finished work at the end. */
@@ -127,6 +128,9 @@ export function Tasks() {
   const [status, setStatus] = useState("all");
   const [priority, setPriority] = useState("all");
   const [range, setRange] = useState<IsoRange>({ from: "", to: "" });
+  const [page, setPage] = useState(1);
+  // New filters start from the first page.
+  useEffect(() => setPage(1), [q, project, assignee, tag, status, priority, range]);
 
   const rows = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -143,7 +147,12 @@ export function Tasks() {
             : assigneeIds(t).includes(Number(assignee))),
       )
       .filter((t) =>
-        status === "all" ? true : status === OVERDUE ? t.isOverdue : t.status === status,
+        // "All" leaves out finished work; pick "Done" to see it.
+        status === "all"
+          ? t.status !== "Done"
+          : status === OVERDUE
+            ? t.isOverdue
+            : t.status === status,
       )
       .filter((t) => !tag || t.tags.includes(tag))
       .filter((t) => priority === "all" || t.priority === priority)
@@ -162,12 +171,16 @@ export function Tasks() {
       tag: tag || undefined,
       status: status === "all" || status === OVERDUE ? undefined : (status as TaskStatus),
       overdue: status === OVERDUE ? "true" : undefined,
+      open: status === "all" ? "true" : undefined,
       priority: priority === "all" ? undefined : (priority as TaskPriority),
       due_after: range.from || undefined,
       due_before: range.from ? range.to || range.from : undefined,
     }),
     [q, project, assignee, tag, status, priority, range],
   );
+  const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const pageRows = rows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const allTags = useTaskTags();
   const filtered = Boolean(
     q || project || assignee || tag || status !== "all" || priority !== "all" || range.from,
@@ -272,7 +285,7 @@ export function Tasks() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="all">All</SelectItem>
                 <SelectItem value={OVERDUE}>Overdue</SelectItem>
                 {TASK_STATUSES.map((s) => (
                   <SelectItem key={s} value={s}>
@@ -312,7 +325,15 @@ export function Tasks() {
             </Button>
           </div>
         ) : view === "list" ? (
-          <TaskTable rows={rows} />
+          <>
+            <TaskTable rows={pageRows} />
+            <Pager
+              page={currentPage}
+              pageCount={pageCount}
+              total={rows.length}
+              onChange={setPage}
+            />
+          </>
         ) : view === "board" ? (
           <TaskBoard rows={rows} canEdit={canEdit} />
         ) : (
@@ -342,6 +363,51 @@ export function Tasks() {
       />
       {body()}
     </>
+  );
+}
+
+/** Previous / next controls under a paged list; hidden when it all fits on one page. */
+export function Pager({
+  page,
+  pageCount,
+  total,
+  onChange,
+}: {
+  page: number;
+  pageCount: number;
+  total: number;
+  onChange: (page: number) => void;
+}) {
+  if (pageCount <= 1) return null;
+  const first = (page - 1) * PAGE_SIZE + 1;
+  const last = Math.min(page * PAGE_SIZE, total);
+  return (
+    <nav aria-label="Pages" className="mt-4 flex items-center justify-between gap-3">
+      <p className="text-sm text-muted-foreground">
+        {first}–{last} of {total} tasks
+      </p>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onChange(page - 1)}
+          disabled={page === 1}
+        >
+          <ChevronLeft /> Previous
+        </Button>
+        <span className="text-sm">
+          Page {page} of {pageCount}
+        </span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onChange(page + 1)}
+          disabled={page === pageCount}
+        >
+          Next <ChevronRight />
+        </Button>
+      </div>
+    </nav>
   );
 }
 

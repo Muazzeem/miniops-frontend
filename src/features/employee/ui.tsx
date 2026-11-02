@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { SearchableSelect } from "@/components/miniops/select-search";
 import {
   Select,
   SelectContent,
@@ -1535,22 +1536,17 @@ function TimeForm() {
             </Select>
           </Field>
           <Field label="Task">
-            <Select
+            <SearchableSelect
+              aria-label="Task"
+              searchable
+              searchPlaceholder="Search tasks…"
               value={draft.task || NO_PROJECT}
-              onValueChange={(v) => setDraft({ ...draft, task: v === NO_PROJECT ? "" : v })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NO_PROJECT}>General work</SelectItem>
-                {projectTasks.map((t) => (
-                  <SelectItem key={t.slug} value={t.slug}>
-                    {t.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onChange={(v) => setDraft({ ...draft, task: v === NO_PROJECT ? "" : v })}
+              options={[
+                { value: NO_PROJECT, label: "General work" },
+                ...projectTasks.map((t) => ({ value: t.slug, label: t.title })),
+              ]}
+            />
           </Field>
           <Field label="Description" className="sm:col-span-2">
             <Textarea

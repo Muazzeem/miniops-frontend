@@ -5,10 +5,10 @@ import {Command,CommandEmpty,CommandGroup,CommandInput,CommandItem,CommandList} 
 import {cn} from '@/lib/utils';
 
 export type Option={value:string;label:string;hint?:string};
-type Props={id?:string;name?:string;options:(Option|string)[];value?:string;defaultValue?:string;onChange?:(v:string)=>void;placeholder?:string;searchPlaceholder?:string;clearable?:boolean;variant?:'field'|'filter';className?:string;'aria-label'?:string};
+type Props={id?:string;name?:string;options:(Option|string)[];value?:string;defaultValue?:string;onChange?:(v:string)=>void;placeholder?:string;searchPlaceholder?:string;clearable?:boolean;searchable?:boolean;variant?:'field'|'filter';className?:string;'aria-label'?:string};
 
 /** One searchable select used for forms and filters across MiniOps. */
-export function SearchableSelect({id,name,options,value,defaultValue,onChange,placeholder='Select…',searchPlaceholder='Search…',clearable,variant='field',className,...rest}:Props){
+export function SearchableSelect({id,name,options,value,defaultValue,onChange,placeholder='Select…',searchPlaceholder='Search…',clearable,searchable,variant='field',className,...rest}:Props){
   const auto=useId();const triggerId=id??auto;
   const opts=options.map(o=>typeof o==='string'?{value:o,label:o}:o);
   const [inner,setInner]=useState(defaultValue??'');const v=value??inner;const [open,setOpen]=useState(false);
@@ -28,7 +28,7 @@ export function SearchableSelect({id,name,options,value,defaultValue,onChange,pl
     {name&&<input type="hidden" name={name} value={v}/>}
     <PopoverContent align="start" sideOffset={6} collisionPadding={8} className="w-[max(var(--radix-popover-trigger-width),14rem)] max-w-[calc(100vw-16px)] rounded-2xl border-border/60 p-0 shadow-modal">
       <Command>
-        {opts.length>6&&<CommandInput placeholder={searchPlaceholder}/>}
+        {(searchable||opts.length>6)&&<CommandInput placeholder={searchPlaceholder}/>}
         <CommandList className="max-h-72 p-1">
           <CommandEmpty>No matches found.</CommandEmpty>
           <CommandGroup>

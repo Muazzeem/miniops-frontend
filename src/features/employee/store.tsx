@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
@@ -113,6 +113,14 @@ interface EmployeeStore {
   people: Member[];
   myActivity: Activity[];
   teamActivity: Activity[];
+  /** Your full history, 20 per call — loaded only on the activity page. */
+  activityFeed: {
+    items: Activity[];
+    loading: boolean;
+    loadingMore: boolean;
+    hasMore: boolean;
+    loadMore: () => void;
+  };
   notifications: Notification[];
   markNotification: (id: string) => void;
   markAllNotifications: () => void;
@@ -259,12 +267,14 @@ export function EmployeeProvider({ children }: { children: ReactNode }) {
     queryFn: () => activityApi.list(apiWid!, query),
     enabled: apiWid !== null && show,
   });
-  const mineQuery = useQuery(
-    feed("mine", showsActivity || pathname.startsWith("/employee/activity"), {
-      actor: "me",
-      page_size: 60,
-    }),
-  );
+  const mineQuery = useQuery(feed("mine", showsActivity, { actor: "me", page_size: 60 }));
+  const feedQuery = useInfiniteQuery({
+    queryKey: ["activity", apiWid, "mine-pages"],
+    queryFn: ({ pageParam }) => activityApi.page(apiWid!, pageParam, { actor: "me" }),
+    initialPageParam: 1,
+    getNextPageParam: (last) => (last.next ? last.page + 1 : undefined),
+    enabled: apiWid !== null && pathname.startsWith("/employee/activity"),
+  });
   const teamQuery = useQuery(feed("team", showsActivity, { exclude_actor: "me", page_size: 30 }));
   const refreshActivity = useCallback(
     () => void queryClient.invalidateQueries({ queryKey: ["activity", apiWid] }),
@@ -289,6 +299,10 @@ export function EmployeeProvider({ children }: { children: ReactNode }) {
   const teamActivity = useMemo(
     () => (teamQuery.data ?? []).map((e) => describe(e, myId)),
     [teamQuery.data, myId],
+  );
+  const feedItems = useMemo(
+    () => (feedQuery.data?.pages ?? []).flatMap((p) => p.results.map((e) => describe(e, myId))),
+    [feedQuery.data, myId],
   );
   const allActivity = useMemo(() => [...myActivity, ...teamActivity], [myActivity, teamActivity]);
 
@@ -406,6 +420,15 @@ export function EmployeeProvider({ children }: { children: ReactNode }) {
     people: ops.members,
     myActivity,
     teamActivity,
+    activityFeed: {
+      items: feedItems,
+      loading: feedQuery.isPending && feedQuery.fetchStatus !== "idle",
+      loadingMore: feedQuery.isFetchingNextPage,
+      hasMore: !!feedQuery.hasNextPage,
+      loadMore: () => {
+        if (feedQuery.hasNextPage && !feedQuery.isFetchingNextPage) void feedQuery.fetchNextPage();
+      },
+    },
     notifications,
     markNotification: ops.readNotification,
     markAllNotifications: () => {

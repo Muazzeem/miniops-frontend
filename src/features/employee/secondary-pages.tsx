@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Camera, Pencil } from "lucide-react";
 import { toast } from "sonner";
@@ -47,8 +47,21 @@ const KIND_LABEL = {
 } as const;
 
 export function ActivityPage() {
-  const { myActivity } = useEmployee();
+  const { activityFeed } = useEmployee();
+  const { items: myActivity, loading, loadingMore, hasMore, loadMore } = activityFeed;
   const [tab, setTab] = useState<"all" | Activity["kind"]>("all");
+  // Load the next 20 when the end of the list scrolls into view. Re-observing after
+  // each page keeps loading while the sentinel stays visible (e.g. a sparse tab).
+  const sentinel = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = sentinel.current;
+    if (!el || !hasMore || loadingMore) return;
+    const io = new IntersectionObserver((entries) => entries[0]?.isIntersecting && loadMore(), {
+      rootMargin: "300px",
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasMore, loadingMore, loadMore, myActivity.length]);
   const groups = useMemo(() => {
     const shown = tab === "all" ? myActivity : myActivity.filter((a) => a.kind === tab);
     const map = new Map<string, Activity[]>();
@@ -85,13 +98,20 @@ export function ActivityPage() {
               <ActivityList activities={items} />
             </Section>
           ))
-        ) : (
+        ) : loading || hasMore ? null : (
           <Section title="Activity">
             <EmptyState
               title="No activity yet"
               description="Tasks you create or complete and time you log will appear here."
             />
           </Section>
+        )}
+        <div ref={sentinel} aria-hidden />
+        {(loading || loadingMore) && (
+          <p className="py-4 text-center text-sm text-muted-foreground">Loading activity…</p>
+        )}
+        {!hasMore && !loading && groups.length > 0 && (
+          <p className="py-4 text-center text-xs text-muted-foreground">You’re all caught up.</p>
         )}
       </div>
     </>

@@ -1,4 +1,4 @@
-import { useMemo, useState, type DragEvent } from "react";
+import { useEffect, useMemo, useState, type DragEvent } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   BriefcaseBusiness,
@@ -48,6 +48,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { TaskItem, TimeItem } from "@/features/store";
+import { PAGE_SIZE, Pager } from "@/features/tasks";
 import { PROJECT_STATUSES, TASK_PRIORITIES, TASK_STATUSES, type TaskStatus } from "@/lib/api";
 import { fmtHours } from "@/lib/hours";
 import { cn } from "@/lib/utils";
@@ -864,6 +865,9 @@ export function TasksPage() {
   const [status, setStatus] = useState("all");
   const [priority, setPriority] = useState("all");
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
+  // New filters start from the first page.
+  useEffect(() => setPage(1), [range, project, status, priority, query]);
   if (!can.tasks) return <NoAccess what="Tasks" />;
   const today = todayIso();
   const week = currentWeek();
@@ -880,12 +884,16 @@ export function TasksPage() {
       return (
         inRange &&
         (project === "all" || (project === "none" ? !t.project : t.project === project)) &&
-        (status === "all" || t.status === status) &&
+        // "All" leaves out finished work; pick "Done" to see it.
+        (status === "all" ? t.status !== "Done" : t.status === status) &&
         (priority === "all" || t.priority === priority) &&
         t.title.toLowerCase().includes(query.toLowerCase())
       );
     })
     .sort(byDue);
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const pageRows = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   return (
     <>
       <PageHeader
@@ -966,7 +974,7 @@ export function TasksPage() {
         <FilterSelect
           value={status}
           setValue={setStatus}
-          placeholder="All statuses"
+          placeholder="All"
           options={TASK_STATUSES.map((v) => ({ value: v, label: v }))}
         />
         <FilterSelect
@@ -988,7 +996,20 @@ export function TasksPage() {
           />
         </Section>
       ) : view === "list" ? (
-        <TaskTable tasks={filtered} onOpen={openTask} onStatus={setTaskStatus} />
+        <>
+          <TaskTable
+            tasks={pageRows}
+            total={filtered.length}
+            onOpen={openTask}
+            onStatus={setTaskStatus}
+          />
+          <Pager
+            page={currentPage}
+            pageCount={pageCount}
+            total={filtered.length}
+            onChange={setPage}
+          />
+        </>
       ) : view === "board" ? (
         <TaskBoard tasks={filtered} onOpen={openTask} onStatus={setTaskStatus} />
       ) : (
@@ -1031,16 +1052,19 @@ type StatusFn = (slug: string, s: TaskStatus) => Promise<void>;
 
 function TaskTable({
   tasks,
+  total = tasks.length,
   onOpen,
   onStatus,
 }: {
   tasks: TaskItem[];
+  /** All matching tasks, when `tasks` is one page of them. */
+  total?: number;
   onOpen: (slug: string) => void;
   onStatus: StatusFn;
 }) {
   const change = (slug: string, s: TaskStatus) => void onStatus(slug, s).catch(() => {});
   return (
-    <Section title={`${tasks.length} task${tasks.length === 1 ? "" : "s"}`}>
+    <Section title={`${total} task${total === 1 ? "" : "s"}`}>
       <div className="desktop-table">
         <Table>
           <TableHeader>
