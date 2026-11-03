@@ -3,6 +3,9 @@ import { Link } from "@tanstack/react-router";
 import {
   AlertCircle,
   ArrowRight,
+  BellRing,
+  CalendarClock,
+  CalendarRange,
   Check,
   ExternalLink,
   FileText,
@@ -15,6 +18,7 @@ import {
   Repeat,
   Search,
   Trash2,
+  Wallet,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -831,14 +835,8 @@ export function ExpenseFormDialog({
 /* ----------------------------------------------------------- Subscriptions */
 
 function SubscriptionsTab({ canEdit }: { canEdit: boolean }) {
-  const { subscriptionList } = useMiniOps();
+  const { subscriptionList, subscriptionSummary: summary } = useMiniOps();
   const [selected, setSelected] = useState<string | null>(null);
-  const active = subscriptionList.filter((s) => s.status === "Active");
-  const monthly = active.reduce((s, x) => s + x.monthlyCost, 0);
-  // One-time purchases don't renew.
-  const renewing = active.filter((s) => !isOneTime(s));
-  const soon = renewing.filter((s) => daysUntil(s.nextRenewal) <= 30);
-  const next = [...renewing].sort((a, b) => a.nextRenewal.localeCompare(b.nextRenewal))[0];
   const current = subscriptionList.find((s) => s.slug === selected) ?? null;
 
   if (subscriptionList.length === 0)
@@ -862,12 +860,42 @@ function SubscriptionsTab({ canEdit }: { canEdit: boolean }) {
   return (
     <>
       <div className="mb-8 metric-grid">
-        <Metric label="Monthly subscription cost" value={money(monthly)} />
-        <Metric label="Annualized cost" value={money(monthly * 12)} />
-        <Metric label="Renewing in 30 days" value={String(soon.length)} />
-        <Metric
+        <BreakdownCard
+          icon={<Wallet />}
+          tone="violet"
+          label="Total cost"
+          rows={[
+            ["One time", summary ? money(summary.total_cost.one_time) : "—"],
+            ["Recurring", summary ? `${money(summary.total_cost.recurring)}/mo` : "—"],
+          ]}
+        />
+        <BreakdownCard
+          icon={<CalendarRange />}
+          tone="primary"
+          label="Estimated yearly cost"
+          rows={[
+            ["One time", summary ? money(summary.yearly_cost.one_time) : "—"],
+            ["Recurring", summary ? money(summary.yearly_cost.recurring) : "—"],
+          ]}
+        />
+        <BreakdownCard
+          icon={<CalendarClock />}
+          tone="cost"
+          label="Renewals in"
+          rows={[
+            ["7 days", summary ? String(summary.renewals.in_7_days) : "—"],
+            ["30 days", summary ? String(summary.renewals.in_30_days) : "—"],
+          ]}
+        />
+        <BreakdownCard
+          icon={<BellRing />}
+          tone="profit"
           label="Next renewal"
-          value={next ? `${next.name} · ${formatDisplayDate(next.nextRenewal)}` : "—"}
+          rows={(summary?.next_renewals ?? []).map((s) => [
+            `${s.name} · ${formatDisplayDate(s.next_renewal)}`,
+            money(s.amount),
+          ])}
+          empty={summary ? "No upcoming renewals" : "—"}
         />
       </div>
       <Section title="Subscriptions" subtitle="Recurring agency software and services">
@@ -915,6 +943,63 @@ function SubscriptionsTab({ canEdit }: { canEdit: boolean }) {
         onClose={() => setSelected(null)}
       />
     </>
+  );
+}
+
+const BREAKDOWN_TONES = {
+  violet: ["from-primary-soft/80", "bg-primary-soft text-primary"],
+  primary: ["from-info-soft/60", "bg-info-soft text-info"],
+  cost: ["from-warning-soft/50", "bg-warning-soft text-warning"],
+  profit: ["from-positive-soft/60", "bg-positive-soft text-positive"],
+} as const;
+
+// A summary card that splits its value into labelled rows.
+function BreakdownCard({
+  icon,
+  tone,
+  label,
+  rows,
+  empty = "—",
+}: {
+  icon: ReactNode;
+  tone: keyof typeof BREAKDOWN_TONES;
+  label: string;
+  rows: [string, string][];
+  empty?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "summary-card flex min-w-0 flex-col rounded-2xl bg-card bg-gradient-to-br to-card to-65% p-5 shadow-card transition-[transform,box-shadow] duration-200 hover:-translate-y-px hover:shadow-card-hover md:p-6",
+        BREAKDOWN_TONES[tone][0],
+      )}
+    >
+      <div className="flex items-center gap-3">
+        <span
+          className={cn(
+            "grid size-10 shrink-0 place-items-center rounded-xl [&_svg]:size-[18px]",
+            BREAKDOWN_TONES[tone][1],
+          )}
+        >
+          {icon}
+        </span>
+        <p className="min-w-0 flex-1 truncate text-[13px] font-medium leading-snug text-muted-foreground">
+          {label}
+        </p>
+      </div>
+      {rows.length ? (
+        <dl className="mt-4 grid gap-2">
+          {rows.map(([k, v]) => (
+            <div key={k} className="flex items-baseline justify-between gap-3">
+              <dt className="min-w-0 truncate text-sm text-muted-foreground">{k}</dt>
+              <dd className="shrink-0 font-mono text-base font-semibold tabular-nums">{v}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : (
+        <p className="mt-4 text-sm text-muted-foreground">{empty}</p>
+      )}
+    </div>
   );
 }
 

@@ -53,6 +53,7 @@ import {
   type ApiTimeEntry,
   type TimeEntryWrite,
   type ApiSubscription,
+  type ApiSubscriptionSummary,
   type ExpenseWrite,
   type SubscriptionWrite,
   type ApiInvitation,
@@ -316,6 +317,8 @@ type Store = WorkspaceData & {
   deleteTime: (slug: string) => Promise<void>;
   expenseList: ExpenseItem[];
   subscriptionList: SubscriptionItem[];
+  /** Cost and renewal figures from the API; null until loaded. */
+  subscriptionSummary: ApiSubscriptionSummary | null;
   expensesState: LoadState;
   /** Approving/rejecting spend needs expenses:edit + financials:view (same rule as the API). */
   canReviewExpenses: boolean;
@@ -1075,6 +1078,13 @@ export function MiniOpsProvider({ children }: { children: ReactNode }) {
     enabled: allowed.expenses,
     staleTime: LIST_STALE_MS,
   });
+  // Shares the "subscriptions" key prefix, so every list invalidation refreshes it too.
+  const subscriptionSummaryQuery = useQuery({
+    queryKey: ["subscriptions", apiWid, "summary"],
+    queryFn: () => subscriptionsApi.summary(apiWid!),
+    enabled: allowed.expenses,
+    staleTime: LIST_STALE_MS,
+  });
   const liveProjects = useMemo(
     () => (projectsQuery.data ?? []).map(fromApiProject),
     [projectsQuery.data],
@@ -1358,6 +1368,7 @@ export function MiniOpsProvider({ children }: { children: ReactNode }) {
     queryClient.setQueryData<ApiSubscription[]>(["subscriptions", apiWid], (l) =>
       l?.filter((s) => s.slug !== slug),
     );
+    void queryClient.invalidateQueries({ queryKey: ["subscriptions", apiWid, "summary"] });
     void queryClient.invalidateQueries({ queryKey: ["expenses", apiWid] });
   }
   async function saveTask(input: TaskInput, slug?: string): Promise<TaskItem> {
@@ -1504,6 +1515,7 @@ export function MiniOpsProvider({ children }: { children: ReactNode }) {
         deleteTime,
         expenseList,
         subscriptionList,
+        subscriptionSummary: live ? (subscriptionSummaryQuery.data ?? null) : null,
         expensesState,
         canReviewExpenses,
         saveExpense,

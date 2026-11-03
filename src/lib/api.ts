@@ -893,12 +893,23 @@ export type SubscriptionWrite = Pick<
   invoice?: File | null;
 };
 
+/** Figures for the subscriptions tab, computed by the API (active subscriptions only). */
+export type ApiSubscriptionSummary = {
+  /** `recurring` is per month. */
+  total_cost: { one_time: number; recurring: number };
+  yearly_cost: { one_time: number; recurring: number };
+  renewals: { in_7_days: number; in_30_days: number };
+  next_renewals: Pick<ApiSubscription, "slug" | "name" | "next_renewal" | "amount">[];
+};
+
 const subscriptionBody = (method: string, { invoice, ...fields }: Partial<SubscriptionWrite>) =>
   bodyWithFile(method, fields as Record<string, string | null>, "invoice", invoice);
 
 export const subscriptionsApi = {
   list: (workspaceId: number) =>
     listAll<ApiSubscription>(`/workspaces/${workspaceId}/subscriptions/`),
+  summary: (workspaceId: number) =>
+    api<ApiSubscriptionSummary>(`/workspaces/${workspaceId}/subscriptions/summary/`),
   create: (workspaceId: number, input: SubscriptionWrite) =>
     api<ApiSubscription>(
       `/workspaces/${workspaceId}/subscriptions/`,
