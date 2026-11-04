@@ -64,8 +64,8 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useMiniOps, useNeeds, type TaskInput } from "@/features/store";
-import { TagList } from "@/components/miniops/tag-input";
+import { useMiniOps, useNeeds, useTaskTags, type TaskInput } from "@/features/store";
+import { TagInput, TagList } from "@/components/miniops/tag-input";
 import { LoginDialog } from "@/features/login-dialog";
 import { TASK_PRIORITIES, TASK_STATUSES, type TaskPriority, type TaskStatus } from "@/lib/api";
 import { fmtHours, parseHours } from "@/lib/hours";
@@ -373,7 +373,9 @@ export function EmployeeShell({ children }: { children: ReactNode }) {
             </div>
           </SheetContent>
         </Sheet>
-        {status === "ready" && (
+        {/* Not gated on "ready": the forms request extra data when they open, and unmounting
+            them while it loads would drop that request and remount them in a loop. */}
+        {status !== "signedOut" && (
           <>
             <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
             <TaskDrawer />
@@ -1072,10 +1074,10 @@ function TaskDrawer() {
               )}
             </div>
             <div className="flex flex-wrap gap-2 pt-3">
-              {task.canEdit && task.status !== "Done" && (
-                <Button onClick={() => void setTaskStatus(task.slug, "Done").catch(() => {})}>
+              {task.canEdit && task.status !== "Done" && task.status !== "In Review" && (
+                <Button onClick={() => void setTaskStatus(task.slug, "In Review").catch(() => {})}>
                   <Check />
-                  Mark complete
+                  Mark as Review
                 </Button>
               )}
               {task.canEdit && (
@@ -1213,6 +1215,7 @@ function TaskForm() {
   } = useEmployee();
   useNeeds(...(taskFormOpen ? (["projects", "tasks", "time"] as const) : []));
   const { projects: allProjects, uploadTaskImage } = useMiniOps();
+  const tagSuggestions = useTaskTags();
   const editing = !!editingTask;
   // New tasks can go in any project you can see; your own projects come first.
   const projectOptions = useMemo(() => {
@@ -1254,7 +1257,7 @@ function TaskForm() {
             tags: [],
             priority: "Medium",
             status: "To Do",
-            dueDate: "",
+            dueDate: todayIso(),
           },
     );
   }, [taskFormOpen, editingTask, myProjects, me.userId]);
@@ -1374,6 +1377,13 @@ function TaskForm() {
               </Select>
             </Field>
           </div>
+          <Field label="Tags">
+            <TagInput
+              value={draft.tags}
+              onChange={(tags) => setDraft((d) => ({ ...d, tags }))}
+              suggestions={tagSuggestions}
+            />
+          </Field>
         </div>
         <DialogFooter className={formFooter}>
           <Button variant="outline" onClick={() => setTaskFormOpen(false)}>

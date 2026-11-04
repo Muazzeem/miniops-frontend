@@ -692,7 +692,7 @@ export function ProjectDetail({ slug }: { slug: string }) {
           {canSeeExpenses && (
             <TabsTrigger value="expenses">Expenses ({projectExpenses.length})</TabsTrigger>
           )}
-          <TabsTrigger value="files">Files</TabsTrigger>
+          <TabsTrigger value="files">Resources</TabsTrigger>
           {showMoney && <TabsTrigger value="financials">Financials</TabsTrigger>}
         </TabsList>
         <TabsContent value="overview">

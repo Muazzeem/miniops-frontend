@@ -1192,6 +1192,7 @@ export type ApiProjectFolder = {
   parent: number | null;
   /** This folder and its ancestors, top-level first. */
   path: { id: number; name: string }[];
+  visibility: ResourceVisibility;
   created_by_name: string;
   created_at: string;
 };
@@ -1203,9 +1204,37 @@ export type ApiProjectFile = {
   folder: number | null;
   size: number;
   content_type: string;
+  visibility: ResourceVisibility;
   uploaded_by_name: string;
   created_at: string;
 };
+
+/** Who sees a project folder, file or link: the owner, the owner and project managers, or
+ * everyone. A folder hidden from someone hides everything inside it. */
+export const RESOURCE_VISIBILITIES = ["owner", "managers", "everyone"] as const;
+export type ResourceVisibility = (typeof RESOURCE_VISIBILITIES)[number];
+
+/** A project link, listed by `order` (lowest first). */
+export type ApiProjectLink = {
+  id: number;
+  order: number;
+  title: string;
+  url: string;
+  visibility: ResourceVisibility;
+  created_by_name: string;
+  created_at: string;
+};
+
+/** Leave out `order` to add the link at the end of the list. */
+export type ProjectLinkWrite = {
+  title: string;
+  url: string;
+  visibility: ResourceVisibility;
+  order?: number;
+};
+
+/** Rename a folder or file and/or change who can see it. */
+export type ResourceUpdate = { name?: string; visibility?: ResourceVisibility };
 
 /** Bytes sent so far and the total, while a file uploads. */
 export type UploadProgress = { loaded: number; total: number };
@@ -1268,15 +1297,19 @@ export const projectFilesApi = {
     ),
   folder: (workspaceId: number, project: string, id: number) =>
     api<ApiProjectFolder>(`/workspaces/${workspaceId}/projects/${project}/folders/${id}/`),
-  createFolder: (workspaceId: number, project: string, name: string, parent: number | null) =>
+  createFolder: (
+    workspaceId: number,
+    project: string,
+    input: { name: string; parent: number | null; visibility: ResourceVisibility },
+  ) =>
     api<ApiProjectFolder>(
       `/workspaces/${workspaceId}/projects/${project}/folders/`,
-      json("POST", { name, parent }),
+      json("POST", input),
     ),
-  renameFolder: (workspaceId: number, project: string, id: number, name: string) =>
+  updateFolder: (workspaceId: number, project: string, id: number, input: ResourceUpdate) =>
     api<ApiProjectFolder>(
       `/workspaces/${workspaceId}/projects/${project}/folders/${id}/`,
-      json("PATCH", { name }),
+      json("PATCH", input),
     ),
   removeFolder: (workspaceId: number, project: string, id: number) =>
     api<void>(`/workspaces/${workspaceId}/projects/${project}/folders/${id}/`, {
@@ -1300,13 +1333,38 @@ export const projectFilesApi = {
       onProgress,
     );
   },
-  renameFile: (workspaceId: number, project: string, id: number, name: string) =>
+  updateFile: (workspaceId: number, project: string, id: number, input: ResourceUpdate) =>
     api<ApiProjectFile>(
       `/workspaces/${workspaceId}/projects/${project}/files/${id}/`,
-      json("PATCH", { name }),
+      json("PATCH", input),
     ),
   removeFile: (workspaceId: number, project: string, id: number) =>
     api<void>(`/workspaces/${workspaceId}/projects/${project}/files/${id}/`, {
+      method: "DELETE",
+    }),
+};
+
+export const projectLinksApi = {
+  list: (workspaceId: number, project: string) =>
+    listAll<ApiProjectLink>(`/workspaces/${workspaceId}/projects/${project}/links/`),
+  create: (workspaceId: number, project: string, input: ProjectLinkWrite) =>
+    api<ApiProjectLink>(
+      `/workspaces/${workspaceId}/projects/${project}/links/`,
+      json("POST", input),
+    ),
+  update: (workspaceId: number, project: string, id: number, input: ProjectLinkWrite) =>
+    api<ApiProjectLink>(
+      `/workspaces/${workspaceId}/projects/${project}/links/${id}/`,
+      json("PATCH", input),
+    ),
+  /** Every link ID in the new order; the API renumbers them 1, 2, 3… */
+  reorder: (workspaceId: number, project: string, ids: number[]) =>
+    api<ApiProjectLink[]>(
+      `/workspaces/${workspaceId}/projects/${project}/links/reorder/`,
+      json("POST", { ids }),
+    ),
+  remove: (workspaceId: number, project: string, id: number) =>
+    api<void>(`/workspaces/${workspaceId}/projects/${project}/links/${id}/`, {
       method: "DELETE",
     }),
 };

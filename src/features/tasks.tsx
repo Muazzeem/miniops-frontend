@@ -73,7 +73,7 @@ import { MobileCard, MobileField, PageHeader, Status } from "@/components/miniop
 import { Section } from "@/components/miniops/forms";
 import { RichText, RichTextEditor } from "@/components/miniops/rich-text";
 import { SearchableSelect } from "@/components/miniops/select-search";
-import { TagList } from "@/components/miniops/tag-input";
+import { TagInput, TagList } from "@/components/miniops/tag-input";
 import {
   DateInput,
   DateRangePicker,
@@ -1263,6 +1263,7 @@ export function TaskFormDialog({
   onOpenChange?: (open: boolean) => void;
 }) {
   const { saveTask, uploadTaskImage, projects, members, taskList } = useMiniOps();
+  const tagSuggestions = useTaskTags();
   const [innerOpen, setInnerOpen] = useState(false);
   const controlled = openProp !== undefined;
   const open = controlled ? openProp : innerOpen;
@@ -1446,6 +1447,17 @@ export function TaskFormDialog({
               "task-due",
               "Due date",
               <DateInput id="task-due" value={form.dueDate} onChange={(v) => set("dueDate", v)} />,
+            )}
+            {field(
+              "task-tags",
+              "Tags",
+              <TagInput
+                id="task-tags"
+                value={form.tags}
+                onChange={(tags) => set("tags", tags)}
+                suggestions={tagSuggestions}
+              />,
+              true,
             )}
             {field(
               "task-description",

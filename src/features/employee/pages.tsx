@@ -49,6 +49,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { TaskItem, TimeItem } from "@/features/store";
 import { PAGE_SIZE, Pager } from "@/features/tasks";
+import { ProjectFiles } from "@/features/project-files";
 import { PROJECT_STATUSES, TASK_PRIORITIES, TASK_STATUSES, type TaskStatus } from "@/lib/api";
 import { fmtHours } from "@/lib/hours";
 import { cn } from "@/lib/utils";
@@ -198,10 +199,10 @@ export function HomePage() {
                     className="group flex items-center gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-primary-soft"
                   >
                     <button
-                      onClick={() => void setTaskStatus(task.slug, "Done").catch(() => {})}
-                      disabled={!task.canEdit}
+                      onClick={() => void setTaskStatus(task.slug, "In Review").catch(() => {})}
+                      disabled={!task.canEdit || task.status === "In Review"}
                       className="grid size-5 shrink-0 place-items-center rounded-full border-2 border-input text-transparent transition-colors hover:border-success hover:text-success disabled:opacity-40"
-                      aria-label={`Complete ${task.title}`}
+                      aria-label={`Mark ${task.title} as review`}
                     >
                       <Check className="size-3" />
                     </button>
@@ -684,6 +685,9 @@ export function ProjectDetailPage({ id }: { id: string }) {
               My Time ({fmtHours(sumHours(projectTime))})
             </TabsTrigger>
           )}
+          <TabsTrigger value="resources" className={tabCls}>
+            Resources
+          </TabsTrigger>
           <TabsTrigger value="team" className={tabCls}>
             Team
           </TabsTrigger>
@@ -807,6 +811,10 @@ export function ProjectDetailPage({ id }: { id: string }) {
               />
             )}
           </Section>
+        </TabsContent>
+        <TabsContent value="resources">
+          {/* Same files and links as the employer view; the API only returns what this member may see. */}
+          <ProjectFiles project={project.id} />
         </TabsContent>
         <TabsContent value="team">
           <Section title="Project team" caption="People with tasks or time on this project">
@@ -1082,17 +1090,31 @@ function TaskTable({
               <TableRow key={t.slug}>
                 <TableCell>
                   <button
-                    onClick={() => change(t.slug, t.status === "Done" ? "To Do" : "Done")}
+                    // Employees send work for review; a reviewed or done task can be reopened.
+                    onClick={() =>
+                      change(
+                        t.slug,
+                        t.status === "Done" || t.status === "In Review" ? "To Do" : "In Review",
+                      )
+                    }
                     disabled={!t.canEdit}
                     className={cn(
                       "grid size-5 place-items-center rounded-full border disabled:opacity-40",
                       t.status === "Done"
                         ? "border-success bg-success text-success-foreground"
-                        : "border-border",
+                        : t.status === "In Review"
+                          ? "border-info bg-info text-white"
+                          : "border-border",
                     )}
-                    aria-label={t.status === "Done" ? `Reopen ${t.title}` : `Complete ${t.title}`}
+                    aria-label={
+                      t.status === "Done" || t.status === "In Review"
+                        ? `Reopen ${t.title}`
+                        : `Mark ${t.title} as review`
+                    }
                   >
-                    {t.status === "Done" && <Check className="size-3" />}
+                    {(t.status === "Done" || t.status === "In Review") && (
+                      <Check className="size-3" />
+                    )}
                   </button>
                 </TableCell>
                 <TableCell>
