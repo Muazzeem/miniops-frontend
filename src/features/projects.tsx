@@ -345,12 +345,11 @@ function ProjectCard({ project, showMoney }: { project: Project; showMoney: bool
       className="flex flex-col rounded-2xl bg-card p-5 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
     >
       <div className="flex items-start justify-between gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-md bg-secondary text-sm font-semibold">
-          {project.name.charAt(0).toUpperCase()}
+        <h2 className="min-w-0 truncate text-base font-semibold">{project.name}</h2>
+        <span className="shrink-0">
+          <Status>{project.status}</Status>
         </span>
-        <Status>{project.status}</Status>
       </div>
-      <h2 className="mt-5 truncate text-base font-semibold">{project.name}</h2>
       <p className="mt-1 truncate text-sm text-muted-foreground">{project.client || "No client"}</p>
       <dl className="mt-5 grid grid-cols-2 gap-4 rounded-xl bg-secondary/60 p-3">
         {showTasks && (
