@@ -5,10 +5,11 @@ import {
   Copy,
   CornerUpLeft,
   Download,
-  ImagePlus,
+  FileText,
   Loader2,
   MessageSquarePlus,
   MoreHorizontal,
+  Paperclip,
   Pencil,
   Plus,
   Search,
@@ -39,7 +40,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { IMAGE_TYPES, validateImage } from "@/data/ops";
+import { IMAGE_TYPES, MAX_IMAGE_BYTES } from "@/data/ops";
 import {
   conversationsKey,
   messagesKey,
@@ -164,7 +165,14 @@ function preview(m: ApiMessage | null, me?: number) {
   if (!m) return "No messages yet";
   const who = m.author === me ? "You: " : "";
   if (m.deleted) return `${who}Message deleted`;
-  return who + (m.text || (m.image_url ? "📷 Photo" : ""));
+  return who + (m.text || (m.image_url ? "📷 Photo" : m.file_name ? `📎 ${m.file_name}` : ""));
+}
+
+const MAX_FILE_BYTES = 25 * 1024 * 1024;
+
+function fileSize(bytes: number) {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
 // ---- page --------------------------------------------------------------------
@@ -443,7 +451,8 @@ function Thread({
   const [olderLoading, setOlderLoading] = useState(false);
   const [text, setText] = useState("");
   const [reply, setReply] = useState<ApiMessage | null>(null);
-  const [image, setImage] = useState<{ file: File; url: string } | null>(null);
+  // `url` is a local preview, set only for images (sent inline); other files go as attachments.
+  const [attachment, setAttachment] = useState<{ file: File; url: string | null } | null>(null);
   const [sending, setSending] = useState(false);
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -493,12 +502,13 @@ function Thread({
 
   const submit = async () => {
     const body = text.trim();
-    if ((!body && !image) || sending) return;
+    if ((!body && !attachment) || sending) return;
     setSending(true);
     try {
       const message = await chatApi.send(wid, convo.id, {
         text: body,
-        image: image?.file ?? null,
+        image: attachment?.url ? attachment.file : null,
+        file: attachment && !attachment.url ? attachment.file : null,
         replyTo: reply?.id ?? null,
       });
       upsertMessage(qc, wid, message);
@@ -515,8 +525,7 @@ function Thread({
       );
       setText("");
       setReply(null);
-      if (image) URL.revokeObjectURL(image.url);
-      setImage(null);
+      clearAttachment();
     } catch (e) {
       toast.error(errorText(e));
     } finally {
@@ -529,19 +538,31 @@ function Thread({
       void submit();
     }
   };
+  const clearAttachment = () => {
+    if (attachment?.url) URL.revokeObjectURL(attachment.url);
+    setAttachment(null);
+  };
   const pick = (file?: File) => {
     if (!file) return;
-    const err = validateImage(file);
-    if (err) {
-      toast.error(err);
+    if (file.size > MAX_FILE_BYTES) {
+      toast.error("Files must be 25 MB or smaller.");
       return;
     }
-    setImage({ file, url: URL.createObjectURL(file) });
+    clearAttachment();
+    const inline = IMAGE_TYPES.includes(file.type) && file.size <= MAX_IMAGE_BYTES;
+    setAttachment({ file, url: inline ? URL.createObjectURL(file) : null });
   };
   const remove = async (m: ApiMessage) => {
     try {
       await chatApi.deleteMessage(wid, convo.id, m.id);
-      upsertMessage(qc, wid, { ...m, deleted: true, text: "", image_url: null });
+      upsertMessage(qc, wid, {
+        ...m,
+        deleted: true,
+        text: "",
+        image_url: null,
+        file_url: null,
+        file_name: "",
+      });
     } catch (e) {
       toast.error(errorText(e));
     }
@@ -684,7 +705,8 @@ function Thread({
                             <b>{m.reply_to.author_name.split(" ")[0]}</b> ·{" "}
                             {m.reply_to.deleted
                               ? "deleted"
-                              : m.reply_to.text || (m.reply_to.has_image ? "Photo" : "")}
+                              : m.reply_to.text ||
+                                (m.reply_to.has_image ? "Photo" : m.reply_to.file_name)}
                           </div>
                         )}
                         {m.deleted ? (
@@ -702,6 +724,27 @@ function Thread({
                                   className="max-h-60 w-full object-cover"
                                 />
                               </button>
+                            )}
+                            {m.file_url && (
+                              <a
+                                href={mediaUrl(m.file_url) ?? "#"}
+                                download={m.file_name}
+                                target="_blank"
+                                rel="noreferrer"
+                                className={cn(
+                                  "mb-1 flex items-center gap-2.5 rounded-xl px-2.5 py-2",
+                                  mine ? "bg-primary-foreground/15" : "bg-secondary",
+                                )}
+                              >
+                                <FileText className="size-5 shrink-0" />
+                                <span className="min-w-0">
+                                  <span className="block truncate font-medium">{m.file_name}</span>
+                                  <span className="block text-xs opacity-70">
+                                    {fileSize(m.file_size)}
+                                  </span>
+                                </span>
+                                <Download className="ml-auto size-4 shrink-0 opacity-70" />
+                              </a>
                             )}
                             {m.text && <p className="whitespace-pre-wrap break-words">{m.text}</p>}
                           </>
@@ -761,26 +804,34 @@ function Thread({
       </div>
 
       <div className="border-t bg-card p-3">
-        {(reply || image) && (
+        {(reply || attachment) && (
           <div className="mb-2 flex items-center gap-3 rounded-xl bg-secondary px-3 py-2 text-xs">
-            {image && (
-              <img src={image.url} alt="Selected" className="size-12 rounded-lg object-cover" />
+            {attachment?.url && (
+              <img
+                src={attachment.url}
+                alt="Selected"
+                className="size-12 rounded-lg object-cover"
+              />
             )}
+            {attachment && !attachment.url && <FileText className="size-6 shrink-0" />}
             {reply ? (
               <span className="min-w-0 flex-1 truncate border-l-2 border-primary pl-2">
                 <b>
                   Replying to {reply.author === me ? "yourself" : reply.author_name.split(" ")[0]}
                 </b>{" "}
-                · {reply.text || "Photo"}
+                · {reply.text || (reply.image_url ? "Photo" : reply.file_name)}
               </span>
             ) : (
-              <span className="flex-1 text-muted-foreground">Image ready to send</span>
+              <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                {attachment?.url
+                  ? "Image ready to send"
+                  : `${attachment?.file.name} · ${fileSize(attachment?.file.size ?? 0)}`}
+              </span>
             )}
             <button
               onClick={() => {
                 setReply(null);
-                if (image) URL.revokeObjectURL(image.url);
-                setImage(null);
+                clearAttachment();
               }}
               aria-label="Cancel"
               className="text-muted-foreground hover:text-foreground"
@@ -793,15 +844,14 @@ function Thread({
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Attach image"
+            aria-label="Attach file"
             onClick={() => fileRef.current?.click()}
           >
-            <ImagePlus />
+            <Paperclip />
           </Button>
           <input
             ref={fileRef}
             type="file"
-            accept={IMAGE_TYPES.join(",")}
             className="hidden"
             onChange={(e) => {
               pick(e.target.files?.[0]);
@@ -839,7 +889,7 @@ function Thread({
           <Button
             size="icon"
             onClick={() => void submit()}
-            disabled={sending || (!text.trim() && !image)}
+            disabled={sending || (!text.trim() && !attachment)}
             aria-label="Send"
           >
             {sending ? <Loader2 className="animate-spin" /> : <SendHorizontal />}

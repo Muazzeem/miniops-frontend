@@ -1113,11 +1113,16 @@ export type ApiMessage = {
   author_name: string;
   text: string;
   image_url: string | null;
+  /** Any non-image attachment (pdf, docx, zip...). */
+  file_url: string | null;
+  file_name: string;
+  file_size: number;
   reply_to: {
     id: number;
     author_name: string;
     text: string;
     has_image: boolean;
+    file_name: string;
     deleted: boolean;
   } | null;
   deleted: boolean;
@@ -1167,14 +1172,15 @@ export const chatApi = {
   send(
     workspaceId: number,
     id: number,
-    input: { text?: string; image?: File | null; replyTo?: number | null },
+    input: { text?: string; image?: File | null; file?: File | null; replyTo?: number | null },
   ) {
     const path = `${chatBase(workspaceId)}/${id}/messages/`;
-    if (input.image) {
+    if (input.image || input.file) {
       const body = new FormData();
       if (input.text) body.append("text", input.text);
       if (input.replyTo) body.append("reply_to", String(input.replyTo));
-      body.append("image", input.image);
+      if (input.image) body.append("image", input.image);
+      if (input.file) body.append("file", input.file);
       return api<ApiMessage>(path, { method: "POST", body });
     }
     return api<ApiMessage>(

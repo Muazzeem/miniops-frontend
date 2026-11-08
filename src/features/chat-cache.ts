@@ -31,7 +31,16 @@ export function upsertMessage(qc: QueryClient, workspaceId: number, message: Api
             m.id === message.id
               ? message
               : m.reply_to?.id === message.id && message.deleted
-                ? { ...m, reply_to: { ...m.reply_to, text: "", has_image: false, deleted: true } }
+                ? {
+                    ...m,
+                    reply_to: {
+                      ...m.reply_to,
+                      text: "",
+                      has_image: false,
+                      file_name: "",
+                      deleted: true,
+                    },
+                  }
                 : m,
           )
         : [...page.results, message],
