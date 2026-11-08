@@ -63,6 +63,7 @@ import {
 } from "@/components/ui/table";
 import { Metric, MobileCard, MobileField, PageHeader, Status } from "@/components/miniops/core";
 import { Section } from "@/components/miniops/forms";
+import { LinkedText } from "@/components/miniops/linked-text";
 import { ProjectFiles } from "./project-files";
 import { SearchableMultiSelect, SearchableSelect } from "@/components/miniops/select-search";
 import {
@@ -698,9 +699,7 @@ export function ProjectDetail({ slug }: { slug: string }) {
         <TabsContent value="overview">
           <div className="grid gap-8 lg:grid-cols-3">
             <Section title="Project summary">
-              <p className="whitespace-pre-line text-sm leading-6 text-muted-foreground">
-                {p.description || "No description yet."}
-              </p>
+              <LinkedText text={p.description || "No description yet."} />
               <div className="mt-5 grid grid-cols-2 gap-4 text-sm">
                 <span>
                   Status

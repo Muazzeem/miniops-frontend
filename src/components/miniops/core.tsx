@@ -55,6 +55,7 @@ import {
 } from "@/components/ui/select";
 import { useMiniOps, useNeeds } from "@/features/store";
 import { NotificationCenter, ProfileMenu } from "./header";
+import { ViewSwitcher } from "./view-switcher";
 import { cn } from "@/lib/utils";
 import { CURRENCIES, browserTimezone, timezoneOptions } from "@/lib/workspace-options";
 import { SearchableSelect } from "./select-search";
@@ -391,6 +392,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             >
               <Search className="size-4" />
             </Button>
+            <ViewSwitcher currentView="employer" />
             <NotificationCenter />
             <ProfileMenu />
           </div>

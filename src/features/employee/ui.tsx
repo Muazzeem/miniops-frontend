@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ViewSwitcher } from "@/components/miniops/view-switcher";
 import {
   Dialog,
   DialogContent,
@@ -322,6 +323,7 @@ export function EmployeeShell({ children }: { children: ReactNode }) {
                 >
                   <Search />
                 </Button>
+                <ViewSwitcher currentView="employee" />
                 <NotificationMenu />
                 <ProfileMenu />
               </div>
