@@ -9,6 +9,7 @@ import {
 import type { ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { MiniOpsProvider } from "@/features/store";
+import { ListStateProvider } from "@/hooks/use-list-state";
 import { Toaster } from "@/components/ui/sonner";
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
@@ -63,7 +64,9 @@ function Root() {
   return (
     <QueryClientProvider client={queryClient}>
       <MiniOpsProvider>
-        <Outlet />
+        <ListStateProvider>
+          <Outlet />
+        </ListStateProvider>
         <Toaster position="bottom-right" />
       </MiniOpsProvider>
     </QueryClientProvider>

@@ -1,3 +1,4 @@
+import { useListState } from "@/hooks/use-list-state";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -196,7 +197,7 @@ export function ChatPage({
   const qc = useQueryClient();
   const [activeId, setActiveId] = useState<number | null>(initial ? Number(initial) : null);
   const [mobileOpen, setMobileOpen] = useState(!!initial);
-  const [q, setQ] = useState("");
+  const [q, setQ] = useListState("ChatPage.q", "");
   const [dialog, setDialog] = useState<null | "direct" | "group">(null);
 
   const active =

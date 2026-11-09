@@ -1,3 +1,4 @@
+import { useListState } from "@/hooks/use-list-state";
 import { useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { LogOut, Mail, Search, ShieldCheck, Users } from "lucide-react";
@@ -46,7 +47,7 @@ function useWorkingOn() {
 export function TeamPage() {
   const { people, me } = useEmployee();
   const workingOn = useWorkingOn();
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useListState("TeamPage.query", "");
   const [open, setOpen] = useState<Member | null>(null);
   const list = people.filter((p) =>
     `${p.name} ${p.title} ${p.role} ${p.email}`.toLowerCase().includes(query.toLowerCase()),

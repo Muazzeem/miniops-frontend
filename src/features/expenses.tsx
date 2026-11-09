@@ -1,3 +1,4 @@
+import { useListState } from "@/hooks/use-list-state";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import {
@@ -113,7 +114,7 @@ const sum = (items: { amount: number }[]) => items.reduce((s, x) => s + x.amount
 export function ExpensesPage() {
   const { expensesState, can, authStatus } = useMiniOps();
   const canEdit = can("expenses", "edit");
-  const [tab, setTab] = useState("expenses");
+  const [tab, setTab] = useListState("ExpensesPage.tab", "expenses");
   useEffect(() => {
     setTab(
       new URLSearchParams(window.location.search).get("tab") === "subscriptions"
@@ -191,11 +192,11 @@ export function ExpensesPage() {
 
 function ExpensesTab({ canEdit }: { canEdit: boolean }) {
   const { expenseList, subscriptionList, projects, canReviewExpenses } = useMiniOps();
-  const [q, setQ] = useState("");
-  const [category, setCategory] = useState("");
-  const [project, setProject] = useState("");
-  const [status, setStatus] = useState("all");
-  const [range, setRange] = useState<IsoRange>({ from: "", to: "" });
+  const [q, setQ] = useListState("ExpensesTab.q", "");
+  const [category, setCategory] = useListState("ExpensesTab.category", "");
+  const [project, setProject] = useListState("ExpensesTab.project", "");
+  const [status, setStatus] = useListState("ExpensesTab.status", "all");
+  const [range, setRange] = useListState<IsoRange>("ExpensesTab.range", { from: "", to: "" });
   const [selected, setSelected] = useState<string | null>(null);
 
   const rows = useMemo(() => {

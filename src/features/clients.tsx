@@ -1,3 +1,4 @@
+import { useListState } from "@/hooks/use-list-state";
 import { useId, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
@@ -104,10 +105,10 @@ export function Clients() {
   const { clientList, clientsState, can, authStatus } = useMiniOps();
   const canEdit = can("clients", "edit");
   const showMoney = can("financials");
-  const [q, setQ] = useState("");
-  const [status, setStatus] = useState("all");
-  const [industry, setIndustry] = useState("");
-  const [sort, setSort] = useState<SortKey>(() => (showMoney ? "revenue" : "name"));
+  const [q, setQ] = useListState("Clients.q", "");
+  const [status, setStatus] = useListState("Clients.status", "all");
+  const [industry, setIndustry] = useListState("Clients.industry", "");
+  const [sort, setSort] = useListState<SortKey>("Clients.sort", () => (showMoney ? "revenue" : "name"));
 
   const industries = useMemo(
     () => [...new Set(clientList.map((c) => c.industry).filter(Boolean))].sort(),

@@ -1,3 +1,4 @@
+import { useListState } from "@/hooks/use-list-state";
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -128,12 +129,12 @@ export function Projects() {
   const canEdit = can("projects", "edit");
   // Without the financials permission the API leaves money out; so does the UI.
   const showMoney = can("financials");
-  const [q, setQ] = useState("");
-  const [status, setStatus] = useState("all");
-  const [client, setClient] = useState("");
-  const [range, setRange] = useState<IsoRange>({ from: "", to: "" });
-  const [sort, setSort] = useState<SortKey>("recent");
-  const [view, setView] = useState<"grid" | "list">("grid");
+  const [q, setQ] = useListState("Projects.q", "");
+  const [status, setStatus] = useListState("Projects.status", "all");
+  const [client, setClient] = useListState("Projects.client", "");
+  const [range, setRange] = useListState<IsoRange>("Projects.range", { from: "", to: "" });
+  const [sort, setSort] = useListState<SortKey>("Projects.sort", "recent");
+  const [view, setView] = useListState<"grid" | "list">("Projects.view", "grid");
 
   const clientOptions = useMemo(
     () => [...new Set(projects.map((p) => p.client).filter(Boolean))].sort(),

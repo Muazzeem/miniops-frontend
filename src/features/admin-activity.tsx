@@ -1,3 +1,4 @@
+import { useListState } from "@/hooks/use-list-state";
 import { useState, type FormEvent } from "react";
 import {
   Activity as ActivityIcon,
@@ -76,7 +77,7 @@ const activity = [
 ] as const;
 
 export function ActivityPage() {
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useListState("ActivityPage.filter", "all");
   const rows =
     filter === "all" ? activity : activity.filter((item) => item[0].toLowerCase().includes(filter));
   return (

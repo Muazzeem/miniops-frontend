@@ -1,3 +1,4 @@
+import { useListState } from "@/hooks/use-list-state";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Camera, Pencil } from "lucide-react";
@@ -49,7 +50,7 @@ const KIND_LABEL = {
 export function ActivityPage() {
   const { activityFeed } = useEmployee();
   const { items: myActivity, loading, loadingMore, hasMore, loadMore } = activityFeed;
-  const [tab, setTab] = useState<"all" | Activity["kind"]>("all");
+  const [tab, setTab] = useListState<"all" | Activity["kind"]>("ActivityPage.tab", "all");
   // Load the next 20 when the end of the list scrolls into view. Re-observing after
   // each page keeps loading while the sentinel stays visible (e.g. a sparse tab).
   const sentinel = useRef<HTMLDivElement>(null);
