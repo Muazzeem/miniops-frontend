@@ -1,3 +1,4 @@
+import { useListState } from "@/hooks/use-list-state";
 import { useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -131,7 +132,7 @@ export function NotificationFeed({
     deleteNotification,
     markRead,
   } = useMiniOps();
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useListState<Filter>("NotificationFeed.filter", "all");
   const kinds = useMemo(
     () =>
       (Object.keys(NOTIFICATION_KIND_LABELS) as NotificationDisplayKind[]).filter((k) =>

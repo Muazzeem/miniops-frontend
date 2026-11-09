@@ -1,3 +1,4 @@
+import { useListState, useResetPageOnFilterChange } from "@/hooks/use-list-state";
 import {
   useEffect,
   useMemo,
@@ -120,17 +121,17 @@ function DueDate({ task, className }: { task: TaskItem; className?: string }) {
 export function Tasks() {
   const { taskList, tasksState, projects, members, can, authStatus } = useMiniOps();
   const canEdit = can("tasks", "edit");
-  const [view, setView] = useState<"list" | "board" | "calendar" | "report">("list");
-  const [q, setQ] = useState("");
-  const [project, setProject] = useState("");
-  const [assignee, setAssignee] = useState("");
-  const [tag, setTag] = useState("");
-  const [status, setStatus] = useState("all");
-  const [priority, setPriority] = useState("all");
-  const [range, setRange] = useState<IsoRange>({ from: "", to: "" });
-  const [page, setPage] = useState(1);
+  const [view, setView] = useListState<"list" | "board" | "calendar" | "report">("Tasks.view", "list");
+  const [q, setQ] = useListState("Tasks.q", "");
+  const [project, setProject] = useListState("Tasks.project", "");
+  const [assignee, setAssignee] = useListState("Tasks.assignee", "");
+  const [tag, setTag] = useListState("Tasks.tag", "");
+  const [status, setStatus] = useListState("Tasks.status", "all");
+  const [priority, setPriority] = useListState("Tasks.priority", "all");
+  const [range, setRange] = useListState<IsoRange>("Tasks.range", { from: "", to: "" });
+  const [page, setPage] = useListState("Tasks.page", 1);
   // New filters start from the first page.
-  useEffect(() => setPage(1), [q, project, assignee, tag, status, priority, range]);
+  useResetPageOnFilterChange([q, project, assignee, tag, status, priority, range], setPage);
 
   const rows = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -147,9 +148,8 @@ export function Tasks() {
             : assigneeIds(t).includes(Number(assignee))),
       )
       .filter((t) =>
-        // "All" leaves out finished work; pick "Done" to see it.
         status === "all"
-          ? t.status !== "Done"
+          ? true
           : status === OVERDUE
             ? t.isOverdue
             : t.status === status,
@@ -171,7 +171,6 @@ export function Tasks() {
       tag: tag || undefined,
       status: status === "all" || status === OVERDUE ? undefined : (status as TaskStatus),
       overdue: status === OVERDUE ? "true" : undefined,
-      open: status === "all" ? "true" : undefined,
       priority: priority === "all" ? undefined : (priority as TaskPriority),
       due_after: range.from || undefined,
       due_before: range.from ? range.to || range.from : undefined,
@@ -527,7 +526,7 @@ export function TaskTable({
 
 function TaskDesktopTable({ rows, showProject }: { rows: TaskItem[]; showProject: boolean }) {
   const { taskList } = useMiniOps();
-  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+  const [expanded, setExpanded] = useListState<Set<string>>("TaskDesktopTable.expanded", () => new Set());
   const toggle = (slug: string) =>
     setExpanded((cur) => {
       const next = new Set(cur);
@@ -538,7 +537,7 @@ function TaskDesktopTable({ rows, showProject }: { rows: TaskItem[]; showProject
   const subtasksOf = (t: TaskItem) =>
     t.subtasks.flatMap((s) => taskList.find((x) => x.slug === s.slug) ?? []);
 
-  const [dueDateOrder, setDueDateOrder] = useState<DueDateOrder>("ascending");
+  const [dueDateOrder, setDueDateOrder] = useListState<DueDateOrder>("TaskDesktopTable.dueDateOrder", "ascending");
   const sortedRows = sortByDueDate(rows, dueDateOrder);
 
   function toggleDueDateOrder() {
@@ -733,7 +732,7 @@ const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 /** Month grid starting Monday, with each task on its due date. */
 function TaskCalendar({ rows }: { rows: TaskItem[] }) {
-  const [month, setMonth] = useState(() => {
+  const [month, setMonth] = useListState("TaskCalendar.month", () => {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });

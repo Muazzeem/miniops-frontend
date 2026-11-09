@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState, type DragEvent } from "react";
+import { useListState, useResetPageOnFilterChange } from "@/hooks/use-list-state";
+import { useMemo, useState, type DragEvent } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   BriefcaseBusiness,
@@ -396,10 +397,10 @@ export function HomePage() {
 
 export function ProjectsPage() {
   const { projects, can } = useEmployee();
-  const [query, setQuery] = useState("");
-  const [status, setStatus] = useState("all");
-  const [sort, setSort] = useState("activity");
-  const [view, setView] = useState<"grid" | "list">("grid");
+  const [query, setQuery] = useListState("ProjectsPage.query", "");
+  const [status, setStatus] = useListState("ProjectsPage.status", "all");
+  const [sort, setSort] = useListState("ProjectsPage.sort", "activity");
+  const [view, setView] = useListState<"grid" | "list">("ProjectsPage.view", "grid");
   const filtered = useMemo(
     () =>
       projects
@@ -867,15 +868,15 @@ const RANGES = ["today", "week", "month", "all", "overdue"] as const;
 
 export function TasksPage() {
   const { tasks, projects, can, openTask, editTask, setTaskStatus } = useEmployee();
-  const [view, setView] = useState<"list" | "board" | "calendar">("list");
-  const [range, setRange] = useState<(typeof RANGES)[number]>("week");
-  const [project, setProject] = useState("all");
-  const [status, setStatus] = useState("all");
-  const [priority, setPriority] = useState("all");
-  const [query, setQuery] = useState("");
-  const [page, setPage] = useState(1);
+  const [view, setView] = useListState<"list" | "board" | "calendar">("TasksPage.view", "list");
+  const [range, setRange] = useListState<(typeof RANGES)[number]>("TasksPage.range", "week");
+  const [project, setProject] = useListState("TasksPage.project", "all");
+  const [status, setStatus] = useListState("TasksPage.status", "all");
+  const [priority, setPriority] = useListState("TasksPage.priority", "all");
+  const [query, setQuery] = useListState("TasksPage.query", "");
+  const [page, setPage] = useListState("TasksPage.page", 1);
   // New filters start from the first page.
-  useEffect(() => setPage(1), [range, project, status, priority, query]);
+  useResetPageOnFilterChange([range, project, status, priority, query], setPage);
   if (!can.tasks) return <NoAccess what="Tasks" />;
   const today = todayIso();
   const week = currentWeek();
@@ -892,8 +893,7 @@ export function TasksPage() {
       return (
         inRange &&
         (project === "all" || (project === "none" ? !t.project : t.project === project)) &&
-        // "All" leaves out finished work; pick "Done" to see it.
-        (status === "all" ? t.status !== "Done" : t.status === status) &&
+        (status === "all" || t.status === status) &&
         (priority === "all" || t.priority === priority) &&
         t.title.toLowerCase().includes(query.toLowerCase())
       );
@@ -1260,7 +1260,7 @@ function TaskBoard({
 }
 
 function TaskCalendar({ tasks, onOpen }: { tasks: TaskItem[]; onOpen: (slug: string) => void }) {
-  const [month, setMonth] = useState(() => {
+  const [month, setMonth] = useListState("TaskCalendar.month", () => {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
@@ -1355,7 +1355,7 @@ export function TimePage() {
   const { timeEntries, people, can, logTimeFor, setEditingTime, setTimeFormOpen, deleteTime } =
     useEmployee();
   const [deleteSlug, setDeleteSlug] = useState<string | null>(null);
-  const [scope, setScope] = useState<"week" | "all">("week");
+  const [scope, setScope] = useListState<"week" | "all">("TimePage.scope", "week");
   if (!can.time) return <NoAccess what="Time" />;
   const week = currentWeek();
   const weekEntries = timeEntries.filter((e) => e.date >= week[0]! && e.date <= week[6]!);

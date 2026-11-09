@@ -1,4 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from "react";
+import { useListState } from "@/hooks/use-list-state";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { BriefcaseBusiness, Download, Network, Users } from "lucide-react";
@@ -95,7 +96,7 @@ function selected(filters: TaskFilters, { projects, members }: Selection): TaskF
 /** How to group a report: what the person picked, else what fits the selection
  * (both projects and members chosen → one row per member per project). */
 function useGrouping(selection: Selection, allowed: TaskReportGroup[]) {
-  const [picked, setPicked] = useState<TaskReportGroup | null>(null);
+  const [picked, setPicked] = useListState<TaskReportGroup | null>("report.group", null);
   const suggested: TaskReportGroup =
     selection.projects.length && selection.members.length
       ? "project_assignee"
@@ -204,7 +205,7 @@ const ALL_GROUPS: TaskReportGroup[] = ["project", "assignee", "project_assignee"
 /** Task counts per project, team member or both, for the tasks matching `filters`. */
 export function TaskReport({ filters }: { filters: TaskFilters }) {
   const wid = useWorkspaceId();
-  const [selection, setSelection] = useState<Selection>(EVERYONE);
+  const [selection, setSelection] = useListState<Selection>("report.selection", EVERYONE);
   const [groupBy, setGroupBy] = useGrouping(selection, ALL_GROUPS);
   const reportFilters = selected(filters, selection);
   const report = useQuery({

@@ -1,3 +1,4 @@
+import { useListState } from "@/hooks/use-list-state";
 import { Fragment, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { Clock3, List, Pencil, Plus, Search, Trash2, Users } from "lucide-react";
@@ -82,12 +83,12 @@ export function TimePage() {
   const { timeList, timeState, members, projects, can, authStatus } = useMiniOps();
   const canLog = can("time", "edit");
   const showMoney = can("financials");
-  const [view, setView] = useState<"entries" | "people">("entries");
-  const [q, setQ] = useState("");
-  const [member, setMember] = useState("");
-  const [project, setProject] = useState("");
-  const [billable, setBillable] = useState("all");
-  const [range, setRange] = useState<IsoRange>({ from: "", to: "" });
+  const [view, setView] = useListState<"entries" | "people">("TimePage.view", "entries");
+  const [q, setQ] = useListState("TimePage.q", "");
+  const [member, setMember] = useListState("TimePage.member", "");
+  const [project, setProject] = useListState("TimePage.project", "");
+  const [billable, setBillable] = useListState("TimePage.billable", "all");
+  const [range, setRange] = useListState<IsoRange>("TimePage.range", { from: "", to: "" });
 
   const rows = useMemo(() => {
     const term = q.trim().toLowerCase();
