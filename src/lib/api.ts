@@ -241,7 +241,10 @@ export type ApiUser = {
 export type AuthResponse = TokenPair & { user: ApiUser };
 const post = (body: unknown): RequestInit => ({ method: "POST", body: JSON.stringify(body) });
 
-export type ProfilePatch = Partial<Pick<ApiUser, "name" | "title" | "phone" | "timezone">>;
+export type ProfilePatch = Partial<Pick<ApiUser, "name" | "title" | "phone" | "timezone">> & {
+  /** Write-only: this browser's Firebase push token ("" clears it). */
+  fcm_token?: string;
+};
 
 export const authApi = {
   async google(credential: string) {

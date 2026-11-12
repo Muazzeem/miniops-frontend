@@ -1,5 +1,5 @@
 import { useListState } from "@/hooks/use-list-state";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -16,6 +16,16 @@ import {
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { PageHeader } from "@/components/miniops/core";
@@ -27,6 +37,14 @@ import {
   type NotificationDisplayKind,
 } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
+import {
+  declinePush,
+  pushAvailable,
+  pushOptedIn,
+  registerPush,
+  startPush,
+  unregisterPush,
+} from "@/lib/push";
 
 const KIND_STYLE: Record<NotificationDisplayKind, [typeof Bell, string]> = {
   task: [CheckSquare, "bg-primary-soft text-primary"],
@@ -85,6 +103,90 @@ export function useNotificationPrefs() {
   };
 }
 
+/** After sign-in, asks to turn on browser push. The "Turn on" click is what lets the
+ * browser show its permission prompt; then the token is created and saved. */
+export function BrowserPushPrompt() {
+  const { authStatus, user } = useMiniOps();
+  const [open, setOpen] = useState(false);
+  // Every sign-in: refresh the token if allowed, or open this dialog to ask.
+  useEffect(() => {
+    if (authStatus === "signedIn") setOpen(startPush());
+  }, [authStatus, user?.id]);
+  const turnOn = () => {
+    console.log("[push] user clicked 'Turn on'");
+    registerPush(true)
+      .then((ok) => {
+        if (ok) toast.success("Browser notifications are on.");
+        else toast.error("Notifications are blocked for this site in your browser settings.");
+      })
+      .catch((e: unknown) => {
+        console.error("[push] setup failed", e);
+        toast.error("Couldn't turn on browser notifications. Try again from Settings.");
+      });
+  };
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Turn on browser notifications?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Get a pop-up on this device for new tasks, messages and reminders, even when MiniOps
+            isn&apos;t open. Your browser will ask you to allow it.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={declinePush}>Not now</AlertDialogCancel>
+          <AlertDialogAction onClick={turnOn}>Turn on</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+/** Per-browser switch for Firebase push (pops up even when MiniOps isn't open). */
+function BrowserPushSwitch() {
+  const [on, setOn] = useState(pushOptedIn);
+  const [busy, setBusy] = useState(false);
+  if (!pushAvailable()) return null;
+  const blocked = Notification.permission === "denied";
+  const toggle = async (next: boolean) => {
+    setBusy(true);
+    try {
+      if (next) {
+        const ok = await registerPush(true);
+        if (!ok) toast.error("Notifications are blocked for this site in your browser settings.");
+        setOn(ok);
+      } else {
+        await unregisterPush(true);
+        setOn(false);
+      }
+    } catch (e) {
+      console.error("[push] setup failed", e);
+      toast.error("Couldn't change browser notifications. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <label className="flex cursor-pointer items-center justify-between gap-4 py-3.5">
+      <span>
+        <span className="block text-sm font-medium">Browser notifications</span>
+        <span className="block text-xs text-muted-foreground">
+          {blocked
+            ? "Blocked in your browser settings for this site."
+            : "Pop-ups on this device, even when MiniOps isn't open."}
+        </span>
+      </span>
+      <Switch
+        checked={on && Notification.permission === "granted"}
+        disabled={busy || blocked}
+        onCheckedChange={toggle}
+        aria-label="Browser notifications"
+      />
+    </label>
+  );
+}
+
 /** Switches for each notification category. */
 export function NotificationPrefsList({ className }: { className?: string }) {
   const { categories, loading, error, toggle } = useNotificationPrefs();
@@ -92,6 +194,7 @@ export function NotificationPrefsList({ className }: { className?: string }) {
   if (error) return <p className="py-6 text-sm text-danger">{error}</p>;
   return (
     <div className={cn("divide-y", className)}>
+      <BrowserPushSwitch />
       {categories.map((c) => (
         <label
           key={c.key}

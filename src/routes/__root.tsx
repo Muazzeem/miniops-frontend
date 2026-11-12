@@ -9,6 +9,7 @@ import {
 import type { ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { MiniOpsProvider } from "@/features/store";
+import { BrowserPushPrompt } from "@/features/notifications";
 import { ListStateProvider } from "@/hooks/use-list-state";
 import { Toaster } from "@/components/ui/sonner";
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
@@ -68,6 +69,7 @@ function Root() {
           <Outlet />
         </ListStateProvider>
         <Toaster position="bottom-right" />
+        <BrowserPushPrompt />
       </MiniOpsProvider>
     </QueryClientProvider>
   );

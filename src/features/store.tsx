@@ -77,6 +77,7 @@ import {
   type TaskStatus,
   type TaskWrite,
 } from "@/lib/api";
+import { unregisterPush } from "@/lib/push";
 export type AuthStatus = "loading" | "signedIn" | "signedOut";
 type WorkspaceInput = { name: string; industry: string; currency: string; timezone: string };
 export type WorkspacePatch = Partial<
@@ -1570,6 +1571,7 @@ export function MiniOpsProvider({ children }: { children: ReactNode }) {
         },
         signOut: async () => {
           try {
+            await unregisterPush();
             await authApi.logout();
           } finally {
             setUser(null);
