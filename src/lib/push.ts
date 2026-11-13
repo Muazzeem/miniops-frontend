@@ -15,6 +15,7 @@ const OPT_OUT = "miniops:browser-push-off";
 
 // shortcut: verbose "[push]" logs while setting push up, trim once it's working.
 const log = (...args: unknown[]) => console.log("[push]", ...args);
+let listening = false;
 
 export const pushAvailable = () =>
   typeof window !== "undefined" &&
@@ -78,7 +79,7 @@ export async function registerPush(fromClick = false): Promise<boolean> {
     log("stop: permission is", Notification.permission);
     return false;
   }
-  const [{ getApps, initializeApp }, { getMessaging, getToken, isSupported }] = await Promise.all([
+  const [{ getApps, initializeApp }, { getMessaging, getToken, isSupported, onMessage }] = await Promise.all([
     import("firebase/app"),
     import("firebase/messaging"),
   ]);
@@ -108,6 +109,11 @@ export async function registerPush(fromClick = false): Promise<boolean> {
   log("saving token to /users/me/…");
   await usersApi.update({ fcm_token: token });
   log("token saved ✓");
+  // Pushes that arrive while this tab is focused (background ones log in the service worker).
+  if (!listening) {
+    listening = true;
+    onMessage(getMessaging(app), (payload) => log("notification received", payload));
+  }
   setOptIn(true);
   return true;
 }
@@ -117,7 +123,7 @@ export async function registerPush(fromClick = false): Promise<boolean> {
 export async function unregisterPush(forget = false): Promise<void> {
   log("unregisterPush (clears the saved token)", { forget });
   if (forget) setOptIn(false);
-  await usersApi.update({ fcm_token: "" }).catch(() => {});
+  await usersApi.update({ fcm_token: "" }).catch((e: unknown) => console.error("[push] clearing token failed", e));
 }
 
 const warn = (e: unknown) => console.error("[push] setup failed", e);

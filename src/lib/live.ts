@@ -71,17 +71,21 @@ export function connectLive(
       let message: LiveMessage;
       try {
         message = JSON.parse(String(event.data)) as LiveMessage;
-      } catch {
+      } catch (e) {
+        console.error("[live] bad message", event.data, e);
         return;
       }
+      if (message.type === "notification") console.log("[live] notification", message);
       if (message.type === "ready") {
         if (attempts > 0) onReconnect();
         attempts = 0;
       }
       onMessage(message);
     };
+    socket.onerror = (event) => console.error("[live] socket error", event);
     socket.onclose = (event) => {
       socket = null;
+      if (!stopped) console.warn("[live] socket closed", event.code, event.reason);
       // 4401: the token was rejected — don't hammer the server with it.
       if (stopped || event.code === 4401) return;
       attempts += 1;
