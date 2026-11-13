@@ -112,7 +112,16 @@ export async function registerPush(fromClick = false): Promise<boolean> {
   // Pushes that arrive while this tab is focused (background ones log in the service worker).
   if (!listening) {
     listening = true;
-    onMessage(getMessaging(app), (payload) => log("notification received", payload));
+    // Firebase shows nothing while a tab is visible. A focused tab already gets the in-app
+    // toast, so only pop the system notification when the window is in the background.
+    onMessage(getMessaging(app), (payload) => {
+      log("notification received", payload);
+      if (document.hasFocus()) return;
+      const { title = "MiniOps", body } = payload.notification ?? {};
+      sw.showNotification(title, { body: body ?? "", data: payload.data ?? {} }).catch((e: unknown) =>
+        console.error("[push] showing notification failed", e),
+      );
+    });
   }
   setOptIn(true);
   return true;
